@@ -1,47 +1,54 @@
-
-!ifort CargarDatos.f90 -o datos -lm -C 
-
 program	CargarDatos
-use, intrinsic :: iso_c_binding
-implicit none
-	!Integer
-	integer(C_INT) :: i,j,k,l,m,n
-	!Allocatable
-	!Real
-	real(C_DOUBLE) ,dimension(:,:), allocatable :: A
-!----------------PARAMETERS----------------------------------------------
+	use iso_fortran_env, only: int32, real64
+	implicit none
+	integer(int32) :: i,j,k,l,m,n, Nx, Ny, N2
+	real(real64) , dimension(:, :), allocatable :: A
 
+	!----------------PARAMETERS----------------------------------------------
 	!Grid size:
-   	Nx  = 10; Ny  = 10;
-   	N2 = Nx*Ny;
+   	i=0
+	j=0
+	k=0
+	l=0
+	m=0
+	n=0
+	Nx  = 10 
+	Ny  = 10
+   	N2 = Nx * Ny
 
-!-------Allocation----------------------
+	!-------Allocation----------------------
 
-	!Real
 	allocate(A(N2,N2)); 
-	
 !---------------Load the variables----------
+	open(unit=99, &
+		file='../../data/MatrixA.dat', & 
+		form="formatted", & 
+		status="old", &
+		action="read" &
+	)
+	print*, Nx
 	
-	open(unit=99,file='Arow.dat',form="formatted",status="old",action="read")
-	do i = 1,Nx
-		do j = 1,Ny
-			m = i+(j-1)*Ny;
-			do k = 1,Nx
+!#if 0
+	do i = 1, Nx
+		do j = 1, Ny
+			m = i + (j-1) * Ny;
+ 			do k = 1,Nx
 				do l = 1,Ny
 					n = k+(l-1)*Ny;
 					read(99,*) A(m,n);
-			end do
-		end do
-	end do
-	close(99)
+				enddo
+			enddo
+		enddo
+	enddo
+!#endif
+close(99)
 
 !------------------------------------------------------------------
-
+	print*, A
 	deallocate(A)
-
 end program CargarDatos
 
-
+!ifort -fpp CargarDatos.f90 -o datos -lm -C 
 
 
 

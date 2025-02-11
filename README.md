@@ -5,17 +5,21 @@ see [] for details.
 
 The repository encloses code From Matlab, Fortran and Python.
 
-To compilie fortran code with the ifx intel compiler:
+To compile fortran code with the ifx intel compiler and CMake:
 
 - Configure the Build with CMake
 
 ```
+
 mkdir build && cd build
 cmake .. -DCMAKE_Fortran_COMPILER=ifx
+
 ```
 
 - Build the Project
 
 ```
+
 cmake --build .
+
 ```

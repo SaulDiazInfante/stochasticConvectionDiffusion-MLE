@@ -5,11 +5,17 @@ contains
 
 
   pure subroutine gen_observation_times(nobs, delta, times)
+    !! Returns the array times which is  a stencil of len n_obs  
+    !! with step-size delta
     implicit none
+    ! Arguments
     integer(int32), intent(in) :: nobs
+      !! The number of observation in the whole time interval
     integer(int32) :: i
     real(real64), intent(in) :: delta
+      !! Step-size, such that nobs * delta = \(T\)
     real(real64), intent(out) :: times(0:nobs)
+      !! Time stencil.
     do i=0, nobs
       times(i) = i * delta
     end do
@@ -19,9 +25,17 @@ contains
   pure subroutine gen_lambdas(DIM, aum, lambdas)
     implicit none
     integer(int32), intent(in) :: DIM
+      !! Spatial dimension of the vector space 
+      !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
     real(real64), intent(in) :: aum
+      !! 
     real(real64), intent(out):: lambdas(DIM)
-
+      !! Entries of matrix \( \Lambda \) from equation
+      !!  $$
+      !!    dU =  
+      !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt 
+      !!      + \sigma B\, U\, dW(t)
+      !!  $$
     integer(int32) i
 !
     lambdas(1)=0.0
@@ -34,6 +48,8 @@ contains
   pure subroutine MB(DIM, lambdas, gamma, B)
     implicit none
     integer(int32), intent(in) :: DIM
+      !! Spatial dimension of the vector space 
+      !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
     real(real64), intent(in) :: gamma
     real(real64), intent(in) :: lambdas(DIM)
     real(real64), intent(out) :: B(DIM, DIM)
@@ -75,7 +91,7 @@ contains
     integer(int32) i,j
     real(real64), parameter :: PI = 3.141592
     do i=1,DIM
-      hs(i)=COS(PI*i*x/Ls(i))
+      hs(i)=COS(PI * i * x / Ls(i))
     enddo
 
     return
@@ -88,7 +104,7 @@ contains
     real(real64), intent(out) :: A(DIM,DIM)
     integer(int32) :: i
     do i=1,DIM
-     A(i,:)=hs(:)
+      A(i,:)=hs(:)
     enddo
     return
   end subroutine MA

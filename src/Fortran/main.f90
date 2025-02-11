@@ -1,6 +1,7 @@
 program main
-  ! This program estimates the parameters
-  ! for the model presented in [ref:]
+  !! This program illustrate the use of all subroutines in the module 
+  !! mode_generators
+  !! for the model presented in [ref:]
   use iso_fortran_env, only: int32, real64
   use mod_generators
 

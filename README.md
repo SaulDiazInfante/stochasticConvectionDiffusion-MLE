@@ -9,7 +9,7 @@ To compile fortran code with the ifx intel compiler and CMake:
 
 - Configure the Build with CMake
 
-```
+```bash
 
 mkdir build && cd build
 cmake .. -DCMAKE_Fortran_COMPILER=ifx
@@ -18,7 +18,7 @@ cmake .. -DCMAKE_Fortran_COMPILER=ifx
 
 - Build the Project
 
-```
+```bash
 
 cmake --build .
 

@@ -2,6 +2,7 @@
 # stochastic Convection Diffusion-MLE
 
 ---
+
 project: stochastic Convection Diffusion-MLE
 summary: This is a short example project
     that demonstrates many of Ford's features

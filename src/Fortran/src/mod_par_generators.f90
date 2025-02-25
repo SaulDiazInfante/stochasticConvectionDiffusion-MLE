@@ -1,11 +1,9 @@
-module mod_generators
+module mod_par_generators
   use iso_fortran_env, only: int32, real64
   implicit none
 contains
-
-
   pure subroutine gen_observation_times(nobs, delta, times)
-    !! Returns the array times which is  a stencil of len n_obs  
+    !! Returns the array times which is  a stencil of len n_obs
     !! with step-size delta
     implicit none
     ! Arguments
@@ -22,40 +20,45 @@ contains
     return
   end subroutine gen_observation_times
 
-  pure subroutine gen_lambdas(DIM, aum, lambdas)
+  pure subroutine gen_lambdas(DIM, L1, L2, lambda_numbers)
     implicit none
     integer(int32), intent(in) :: DIM
-      !! Spatial dimension of the vector space 
+      !! Spatial dimension of the vector space
       !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
-    real(real64), intent(in) :: aum
-      !! 
-    real(real64), intent(out):: lambdas(DIM)
+    real(real64), intent(in) :: L1
+    real(real64), intent(in) :: L2
+          !!
+    real(real64), intent(out):: lambda_numbers(DIM)
       !! Entries of matrix \( \Lambda \) from equation
       !!  $$
-      !!    dU =  
-      !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt 
+      !!    dU =
+      !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt
       !!      + \sigma B\, U\, dW(t)
       !!  $$
+    real(real64), parameter :: PI = 2.d0 * DACOS (1.d0)
+    real(real64)  pi_square, L1_res, L2_res, pi_square_sum_l1_res_l2_res
     integer(int32) i
 !
-    lambdas(1)=0.0
-    do i=2,DIM
-      lambdas(i)=aum+lambdas(i-1)
+    pi_square = PI ** 2
+    L1_res = (L1) ** (-1)
+    L2_res = (L2) ** (-1)
+    pi_square_sum_l1_res_l2_res = (PI ** 2) * (L1_res + L2_res)
+    do i=1, DIM
+      lambda_numbers(i)= pi_square_sum_l1_res_l2_res * (i**2)
     enddo
-    return
+     return
   end subroutine gen_lambdas
 
   pure subroutine MB(DIM, lambdas, gamma, B)
     implicit none
     integer(int32), intent(in) :: DIM
-      !! Spatial dimension of the vector space 
+      !! Spatial dimension of the vector space
       !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
     real(real64), intent(in) :: gamma
     real(real64), intent(in) :: lambdas(DIM)
     real(real64), intent(out) :: B(DIM, DIM)
 
     integer(int32) i
-
 !
     B(:,:)=0.0
     do i=1, DIM
@@ -64,39 +67,21 @@ contains
     B(1,1)=1.0
     return
   end subroutine MB
-
-  pure subroutine MG(DIM, lambdas, G)
+  !TODO: Rename this matrix
+  pure subroutine gen_lambda_matrix(DIM, lambdas, lambda_matrix)
     implicit none
     integer(int32), intent(in) :: DIM
     real(real64), intent(in) :: lambdas(DIM)
-    real(real64), intent(out) :: G(DIM, DIM)
+    real(real64), intent(out) :: lambda_matrix(DIM, DIM)
 
     integer(int32) i
-    G(:,:)=0.0
+    lambda_matrix(:,:)=0.0
 
     do i=1,DIM
-      G(i,i)=lambdas(i)
+      lambda_matrix(i,i)=lambdas(i)
     enddo
     return
-  end subroutine MG
-
-  pure subroutine gen_hs(DIM, x, Ls, hs)
-    implicit none
-    integer(int32), intent(in) :: DIM
-
-    real(real64), intent(in) :: Ls(DIM)
-    real(real64), intent(in) :: x
-    real(real64), intent(out) :: hs(DIM)
-
-    integer(int32) i,j
-    real(real64), parameter :: PI = 3.141592
-    do i=1,DIM
-      hs(i)=COS(PI * i * x / Ls(i))
-    enddo
-
-    return
-  end subroutine gen_hs
-
+  end subroutine gen_lambda_matrix
   pure subroutine MA(DIM, hs, A)
     implicit none
     integer(int32), intent(in) :: DIM
@@ -108,22 +93,4 @@ contains
     enddo
     return
   end subroutine MA
-
-  pure subroutine MDrift(DIM, theta, beta, G, A, Talpha)
-    implicit none
-
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: theta
-    real(real64), intent(in) :: beta
-    real(real64), intent(in) :: G(DIM, DIM)
-    real(real64), intent(in) :: A(DIM, DIM)
-    real(real64), intent(out) :: Talpha(DIM, DIM)
-
-    integer(int32) i,j
-
-    Talpha(:,:) = -beta * G(:,:) - theta * A(:,:)
-    return
-  end subroutine MDrift
-
-
-end module mod_generators
+end module mod_par_generators

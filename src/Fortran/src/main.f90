@@ -1,9 +1,10 @@
 program main
-  !! This program illustrate the use of all subroutines in the module 
+  !! This program illustrate the use of all subroutines in the module
   !! mode_generators
   !! for the model presented in [ref:]
   use iso_fortran_env, only: int32, real64
-  use mod_generators
+  use mod_par_generators
+  !!use mod_sde_coefficients
 
   implicit none
   integer(int32), parameter :: DIM = 2
@@ -15,10 +16,12 @@ program main
   real(real64),  parameter :: GAMMA=1.0
   real(real64),  parameter :: SIGMA=1.0
   real(real64),  parameter :: DELTA=0.01
-  real(real64),  parameter :: AUM=0.1
-  real(real64),  parameter :: PI=3.1416
+  real(real64),  parameter :: L1=1.0
+  real(real64),  parameter :: L2=1.0
 
-  real(real64) x, G(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM), lambdas(DIM), B(DIM,DIM)
+  real(real64) x, lambda_matrix(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM)
+  real(real64) lambda_numbers(DIM)
+  real(real64) lambdas(DIM), B(DIM,DIM)
   real(real64) hs(DIM), startx(DIM), Ls(DIM)
   real(real64) Talpha(DIM,DIM), Tsigma(DIM,DIM), brownian(nobs,DIM), HT
   real(real64) :: times(0:nobs)
@@ -27,25 +30,21 @@ program main
   call gen_observation_times(NOBS, DELTA, times)
 ! print*,"times",times
 
-  call gen_lambdas(DIM, aum, lambdas)
-  print*,"lambdas",lambdas
+!  call gen_lambdas(DIM, L1, L2, lambda_numbers)
+!  print*,"lambdas",lambdas
 
-  call MB(DIM, lambdas, gamma, B)
-  print*,"B",B
+!  call MB(DIM, lambdas, gamma, B)
+!  print*,"B",B
 
-  call MG(DIM, lambdas, G)
-  print*,"G",G
+!  call gen_lambda_matrix(DIM, lambdas, lambda_matrix)
+!  print*,"lambda", lambda_matrix
 
-  call gen_hs(DIM, x, Ls, hs)
-  print*,"hs",hs
+!!  call MA(DIM, hs, A)
+!!  print*,"A",A
 
-  call MA(DIM,hs,A)
-  print*,"A",A
-
-  call MDrift(DIM, theta, beta, G, A, Talpha)
-  print*,"Talpha", Talpha
-
+!!  call MDrift(DIM, theta, beta, lambda_matrix, A, Talpha)
+  ! print*,"Talpha", Talpha
   ! TODO: diffusion
-
 end program main
 
+! gfortran main.f90 mod_par_generators.f90 mod_sde_coefficients.f90 -o a.out

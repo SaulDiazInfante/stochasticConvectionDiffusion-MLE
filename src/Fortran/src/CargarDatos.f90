@@ -6,7 +6,7 @@ program	CargarDatos
 
 	!----------------PARAMETERS----------------------------------------------
 	!Grid size:
-   	i=0
+	i=0
 	j=0
 	k=0
 	l=0
@@ -20,6 +20,7 @@ program	CargarDatos
 
 	allocate(A(N2,N2)); 
 !---------------Load the variables----------
+
 	open(unit=99, &
 		file='../../data/MatrixA.dat', & 
 		form="formatted", & 
@@ -28,11 +29,10 @@ program	CargarDatos
 	)
 	print*, Nx
 	
-!#if 0
 	do i = 1, Nx
 		do j = 1, Ny
 			m = i + (j-1) * Ny;
- 			do k = 1,Nx
+			do k = 1,Nx
 				do l = 1,Ny
 					n = k+(l-1)*Ny;
 					read(99,*) A(m,n);
@@ -40,7 +40,6 @@ program	CargarDatos
 			enddo
 		enddo
 	enddo
-!#endif
 close(99)
 
 !------------------------------------------------------------------

@@ -22,4 +22,11 @@ cmake .. -DCMAKE_Fortran_COMPILER=ifx
 
 cmake --build .
 
+
+```
+
+If you build directory is at the same branch of Fotran/src the config with
+
+```bash
+cmake ../src -DCMAKE_Fortran_COMPILER=ifx
 ```

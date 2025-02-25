@@ -6,5 +6,5 @@
         "frontpage",
         "mathcal"
     ],
-    "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran"
+    "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran/src"
 }

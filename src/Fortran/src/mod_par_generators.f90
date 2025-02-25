@@ -2,6 +2,7 @@ module mod_par_generators
   use iso_fortran_env, only: int32, real64
   implicit none
 contains
+  
   pure subroutine gen_observation_times(nobs, delta, times)
     !! Returns the array times which is  a stencil of len n_obs
     !! with step-size delta
@@ -35,14 +36,13 @@ contains
       !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt
       !!      + \sigma B\, U\, dW(t)
       !!  $$
-    real(real64), parameter :: PI = 2.d0 * DACOS (1.d0)
+    real(real64), parameter :: PI = 2.D0*DASIN(1.D0)
     real(real64)  pi_square, L1_res, L2_res, pi_square_sum_l1_res_l2_res
     integer(int32) i
-!
     pi_square = PI ** 2
     L1_res = (L1) ** (-1)
     L2_res = (L2) ** (-1)
-    pi_square_sum_l1_res_l2_res = (PI ** 2) * (L1_res + L2_res)
+    pi_square_sum_l1_res_l2_res = (L1_res + L2_res) * (PI ** 2)
     do i=1, DIM
       lambda_numbers(i)= pi_square_sum_l1_res_l2_res * (i**2)
     enddo
@@ -73,7 +73,6 @@ contains
     integer(int32), intent(in) :: DIM
     real(real64), intent(in) :: lambdas(DIM)
     real(real64), intent(out) :: lambda_matrix(DIM, DIM)
-
     integer(int32) i
     lambda_matrix(:,:)=0.0
 
@@ -82,14 +81,28 @@ contains
     enddo
     return
   end subroutine gen_lambda_matrix
-  pure subroutine MA(DIM, hs, A)
+  !!
+  pure subroutine MA(DIM, Nx, Ny, AM, A)
     implicit none
     integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: hs(DIM)
-    real(real64), intent(out) :: A(DIM,DIM)
-    integer(int32) :: i
-    do i=1,DIM
-      A(i,:)=hs(:)
+    integer(int32), intent(in) :: Nx
+    integer(int32), intent(in) :: Ny
+    real(real64), intent(in) :: AM(DIM * DIM)
+    real(real64), intent(out) :: A(DIM, DIM)
+
+    integer(int32) :: i, j, k, l, m, n, tot
+    tot=1
+    do i = 1, Nx
+      do j = 1, Ny
+        m = i + (j - 1) * Ny
+          do k = 1, Nx
+            do l = 1, Ny
+                n = k + (l - 1) * Ny
+                A(m, n) = AM(tot)
+                tot = tot + 1
+            enddo
+          enddo
+      enddo
     enddo
     return
   end subroutine MA

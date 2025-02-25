@@ -20,33 +20,52 @@ contains
     end do
     return
   end subroutine gen_observation_times
-
-  pure subroutine gen_lambdas(DIM, L1, L2, lambda_numbers)
+!
+  pure subroutine gen_lambdas(DIM, Nx, Ny, L1, L2, lambda_numbers)
     implicit none
     integer(int32), intent(in) :: DIM
-      !! Spatial dimension of the vector space
-      !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
+    integer(int32), intent(in) :: Nx
+    integer(int32), intent(in) :: Ny
+
+    !! Spatial dimension of the vector space
+    !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
     real(real64), intent(in) :: L1
     real(real64), intent(in) :: L2
           !!
     real(real64), intent(out):: lambda_numbers(DIM)
-      !! Entries of matrix \( \Lambda \) from equation
-      !!  $$
-      !!    dU =
-      !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt
-      !!      + \sigma B\, U\, dW(t)
-      !!  $$
+    !! Entries of matrix \( \Lambda \) from equation
+    !!  $$
+    !!    dU =
+    !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt
+    !!      + \sigma B\, U\, dW(t)
+    !!  $$
     real(real64), parameter :: PI = 2.D0*DASIN(1.D0)
     real(real64)  pi_square, L1_res, L2_res, pi_square_sum_l1_res_l2_res
-    integer(int32) i
+    real(real64) lambda_ij
+    
+    integer(int32) i, j, k , m, l, n
     pi_square = PI ** 2
     L1_res = (L1) ** (-1)
     L2_res = (L2) ** (-1)
     pi_square_sum_l1_res_l2_res = (L1_res + L2_res) * (PI ** 2)
-    do i=1, DIM
-      lambda_numbers(i)= pi_square_sum_l1_res_l2_res * (i**2)
+    
+    k=0
+    
+    do i=1, Nx
+      do j=1, Ny
+        m = i + (j - 1) * Ny
+        do k=1, Nx
+          do l=1, Ny
+            n  = k + (l - 1) * Ny
+            if (m == n) then
+              lambda_ij =  pi_square  * ((i/L1)**2 + (j/L1)**2)
+              lambda_numbers(m) =   lambda_ij
+            endif
+          enddo
+        enddo
+      enddo
     enddo
-     return
+    return
   end subroutine gen_lambdas
 
   pure subroutine MB(DIM, lambdas, gamma, B)
@@ -67,7 +86,9 @@ contains
     B(1,1)=1.0
     return
   end subroutine MB
+  
   !TODO: Rename this matrix
+  
   pure subroutine gen_lambda_matrix(DIM, lambdas, lambda_matrix)
     implicit none
     integer(int32), intent(in) :: DIM

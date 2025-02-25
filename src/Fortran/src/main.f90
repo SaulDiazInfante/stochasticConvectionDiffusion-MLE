@@ -7,17 +7,19 @@ program main
   !!use mod_sde_coefficients
 
   implicit none
-  integer(int32), parameter :: DIM = 2
-  integer(int32), parameter :: SEED=765431
-  integer(int32), parameter ::NOBS=10
+  integer(int32), parameter :: Nx = 10
+  integer(int32), parameter :: Ny = 10
+  integer(int32), parameter :: DIM = Nx * Ny
+  integer(int32), parameter :: SEED = 765431
+  integer(int32), parameter :: nobs= 1000
 
-  real(real64),  parameter :: THETA=0.5
-  real(real64),  parameter :: BETA=0.5
-  real(real64),  parameter :: GAMMA=1.0
-  real(real64),  parameter :: SIGMA=1.0
-  real(real64),  parameter :: DELTA=0.01
-  real(real64),  parameter :: L1=1.0
-  real(real64),  parameter :: L2=1.0
+  real(real64),  parameter :: theta = 0.5
+  real(real64),  parameter :: beta = 0.5
+  real(real64),  parameter :: gamma = 1.0
+  real(real64),  parameter :: sigma = 0.2
+  real(real64),  parameter :: delta = 0.0001
+  real(real64),  parameter :: L1 = 5.0
+  real(real64),  parameter :: L2 = 5.0
 
   real(real64) x, lambda_matrix(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM)
   real(real64) lambda_numbers(DIM)
@@ -26,18 +28,31 @@ program main
   real(real64) Talpha(DIM,DIM), Tsigma(DIM,DIM), brownian(nobs,DIM), HT
   real(real64) :: times(0:nobs)
 
+! load matrix A entries
+
+open(99,file="MatrixA.dat")
+  read(99,*) AM
+!    print*,'Dimension=',AM
+
+close(99)
+
+
 ! generate times
   call gen_observation_times(NOBS, DELTA, times)
-! print*,"times",times
+  print*,"times:", times
+  write(*,*)
 
-!  call gen_lambdas(DIM, L1, L2, lambda_numbers)
-!  print*,"lambdas",lambdas
+  call gen_lambdas(DIM, L1, L2, lambda_numbers)
+  print*, "lambdas", lambdas
+  write(*,*)
 
-!  call MB(DIM, lambdas, gamma, B)
-!  print*,"B",B
+  call MB(DIM, lambdas, gamma, B)
+  print*, "B", B
+  write(*,*)
 
-!  call gen_lambda_matrix(DIM, lambdas, lambda_matrix)
-!  print*,"lambda", lambda_matrix
+  call gen_lambda_matrix(DIM, lambdas, lambda_matrix)
+  print*,"lambda", lambda_matrix
+  write(*,*)
 
 !!  call MA(DIM, hs, A)
 !!  print*,"A",A

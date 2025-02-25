@@ -2,10 +2,8 @@ module mod_generators
   use iso_fortran_env, only: int32, real64
   implicit none
 contains
-
-
   pure subroutine gen_observation_times(nobs, delta, times)
-    !! Returns the array times which is  a stencil of len n_obs  
+    !! Returns the array times which is  a stencil of len n_obs
     !! with step-size delta
     implicit none
     ! Arguments
@@ -25,15 +23,15 @@ contains
   pure subroutine gen_lambdas(DIM, aum, lambdas)
     implicit none
     integer(int32), intent(in) :: DIM
-      !! Spatial dimension of the vector space 
+      !! Spatial dimension of the vector space
       !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
     real(real64), intent(in) :: aum
-      !! 
+      !!
     real(real64), intent(out):: lambdas(DIM)
       !! Entries of matrix \( \Lambda \) from equation
       !!  $$
-      !!    dU =  
-      !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt 
+      !!    dU =
+      !!      \big( -\beta \Lambda\,   -\theta A\,\big)  U   dt
       !!      + \sigma B\, U\, dW(t)
       !!  $$
     integer(int32) i
@@ -48,7 +46,7 @@ contains
   pure subroutine MB(DIM, lambdas, gamma, B)
     implicit none
     integer(int32), intent(in) :: DIM
-      !! Spatial dimension of the vector space 
+      !! Spatial dimension of the vector space
       !! \( \mathcal{O}\subset \mathbb{R}^{d}\).
     real(real64), intent(in) :: gamma
     real(real64), intent(in) :: lambdas(DIM)
@@ -124,6 +122,4 @@ contains
     Talpha(:,:) = -beta * G(:,:) - theta * A(:,:)
     return
   end subroutine MDrift
-
-
 end module mod_generators

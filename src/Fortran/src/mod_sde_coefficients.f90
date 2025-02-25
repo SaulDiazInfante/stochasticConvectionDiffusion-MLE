@@ -14,22 +14,22 @@ contains
     !! meaning
     real(real64), intent(in) :: lambda_mat(DIM,DIM)
     !!
-    real(real64), intent(out) ::lambda_mat(DIM,DIM)
-    !!
+    real(real64), intent(out) :: drift_mat(DIM,DIM)
     integer(int32) i, j
-  end subrotine Mdrift
+  end subroutine Mdrift
 
-  subroutine MDiff(DIM,sigma,B,Tsigma)
+  pure subroutine MDiff(DIM, sigma, B, diffusion_mat)
     implicit none
-        integer DIM
-    real sigma,B(DIM,DIM),Tsigma(DIM,DIM)
+    integer(int32), intent(in) :: DIM
+    !! >  dimension
+    real(real64), intent(in) :: sigma
+    !! Noise intensity
+    real(real64), intent(in) :: B(DIM, DIM)
 
+    real(real64), intent(out) :: diffusion_mat(DIM, DIM)
 
-
-         Tsigma(:,:)=sigma*B(:,:)
-
-
+    diffusion_mat(:,:)=sigma * B(:,:)
     return
-    end
+  end subroutine MDiff
 
-end mod_sde_coefficients
+end module mod_sde_coefficients

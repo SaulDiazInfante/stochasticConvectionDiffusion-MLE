@@ -40,7 +40,7 @@ program main
   call gen_observation_times(NOBS, DELTA, times)
   print*,"times :)"
  
-  call gen_lambdas(DIM, L1, L2, lambda_numbers)
+  call gen_lambdas(DIM, Nx, Ny, L1, L2, lambda_numbers)
   print*, "lambdas :)", lambda_numbers(50:70)
  
   call MB(DIM, lambda_numbers, gamma, B)

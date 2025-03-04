@@ -31,23 +31,26 @@ for i = 1:Nx
             hk =@(x,y) cos(pi*k/L1*x);
             for l = 1:Ny
                 hl =@(x,y) cos(pi*l/L1*y);
-
-                integrand_xy =@(x,y) v1xy(x,y).*hi_prime(x,y).*hj(x,y).*hk(x,y).*hl(x,y)+v2xy(x,y).*hi(x,y).*hj_prime(x,y).*hk(x,y).*hl(x,y);
-
-                %integrand_xy =@(x,y) v1xy(x,y).*(-pi*i/L1*sin(pi*i/L1*x)).*(cos(pi*j/L1*y)).*(cos(pi*k/L1*x)).*(cos(pi*l/L1*y))+v2xy(x,y).*(cos(pi*i/L1*x)).*(-pi*j/L1*sin(pi*j/L1*y)).*(cos(pi*k/L1*x)).*(cos(pi*l/L1*y));
-
-                vcoef(i,j,k,l) = integral2(integrand_xy,0,L1,0,L2);
-
+                integrand_xy =@(x, y) v1xy(x, y) \ 
+                  .* hi_prime(x, y) .*hj(x, y) .* hk(x, y) .* hl(x, y) \
+                  + v2xy(x, y) .* hi(x, y) \
+                  .* hj_prime(x, y) .* hk(x, y) .* hl(x, y);
+                % integrand_xy =@(x,y) \ 
+                %  v1xy(x, y) .* (-pi * i / L1*sin(pi * i / L1 * x)) \
+                %  .* (cos(pi * j / L1 * y)). * (cos(pi * k / L1 * x)) \
+                %  .* (cos(pi * l / L1 * y)) \
+                %  + v2xy(x, y) .* (cos(pi * i / L1 * x)) \ 
+                %  .* (-pi*j/L1*sin(pi*j/L1*y)) 
+                %  \.* (cos(pi * k / L1 * x)) .* (cos(pi * l / L1 * y));
+                vcoef(i,j,k,l) = integral2(integrand_xy, 0, L1, 0, L2);
             end
         end
     end
 end
 
 N2 = Nx*Ny;
-
-A = zeros(N2,N2);
+A = zeros(N2, N2);
 Arow = zeros(N2^2,1);
-
 r = 0;
 for i = 1:Nx
     for j = 1:Ny
@@ -57,7 +60,7 @@ for i = 1:Nx
                 n = k+(l-1)*Ny;
                 A(m,n) = vcoef(i,j,k,l);
                 r = r+1; %Va contando de acuerdo a 
-                 Arow(r,1) = A(m,n);
+                Arow(r, 1) = A(m,n);
             end
         end
     end
@@ -95,6 +98,5 @@ end
 figure(1)
 quiver(xgrid,ygrid,v1grid,v2grid)
 axis([0,L1,0,L2])
-
 print('CampoDeVectores','-depsc',figure(1))
 

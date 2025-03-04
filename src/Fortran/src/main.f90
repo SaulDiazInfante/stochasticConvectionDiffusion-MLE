@@ -1,12 +1,18 @@
-program main
-  !! This program illustrate the use of all subroutines in the module
-  !! mode_generators
-  !! for the model presented in [ref:]
+module fortran_main
+  !! This module wraps the main Fortran functionality to be called from C
   use iso_fortran_env, only: int32, real64
+  use iso_c_binding, only: c_int
   use mod_par_generators
   use mod_sde_coefficients
 
   implicit none
+  
+  public :: run_fortran_main
+
+contains
+
+  ! This subroutine will be called from the C main function
+  subroutine run_fortran_main() bind(c, name="run_fortran_main")
   integer(int32), parameter :: Nx = 10
   integer(int32), parameter :: Ny = 10
   integer(int32), parameter :: DIM = Nx * Ny
@@ -27,16 +33,17 @@ program main
   real(real64) lambdas(DIM), B(DIM,DIM)
   real(real64) hs(DIM), startx(DIM), Ls(DIM), AM(DIM*DIM)
   real(real64) drift_mat(DIM,DIM), diffusion_mat(DIM,DIM)
+  real(real64) U(DIM), vector_drift(DIM)
   real(real64) brownian(nobs,DIM), HT
   real(real64) :: times(0:nobs)
 
 ! load matrix A entries
-!print*,"Fucking PI: ", PI 
   open(99, file="../src/MatrixA.dat")
   read(99,*) AM
   close(99)
 
-! generate times
+  U(:) = 1.0D0
+  ! generate times
   call gen_observation_times(NOBS, DELTA, times)
   print*,"times :)"
  
@@ -57,6 +64,8 @@ program main
   ! TODO: diffusion
   call  gen_diffusion_matrix(DIM, sigma, B, diffusion_mat)
   print*,"Diffusion_matrix :)", diffusion_mat(1:5, 1:5)
-end program main
 
-! ifx -o winner main.f90 -I"${MKLROOT}/include/mkl" -I"${MKLROOT}/include/mkl/intel64/lp64" -qmkl=sequential
+  call eval_drift(DIM, drift_mat, U, vector_drift)
+  print*,"drift :)", vector_drift(1:5)
+  end subroutine run_fortran_main
+end module fortran_main

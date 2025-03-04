@@ -5,6 +5,7 @@
         "Dueñas",
         "enddo",
         "frontpage",
+        "inout",
         "mathcal"
     ],
     "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran/src"

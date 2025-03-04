@@ -19,13 +19,13 @@ program main
     integer(int32), parameter :: nobs= 1000
   
     real(real64), parameter :: PI = 2.D0 * DASIN(1.D0)
-    real(real64),  parameter :: theta = 0.5
-    real(real64),  parameter :: beta = 0.5
-    real(real64),  parameter :: gamma = 1.0
+    real(real64),  parameter :: theta = 0.5_real64
+    real(real64),  parameter :: beta = 0.5_real64
+    real(real64),  parameter :: gamma = 1.0_real64
     real(real64),  parameter :: sigma = 0.2_real64
-    real(real64),  parameter :: delta = 0.0001
-    real(real64),  parameter :: L1 = 5.0
-    real(real64),  parameter :: L2 = 5.0
+    real(real64),  parameter :: delta = 0.0001_real64
+    real(real64),  parameter :: L1 = 5.0_real64
+    real(real64),  parameter :: L2 = 5.0_real64
   
     real(real64) x, lambda_matrix(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM)
     real(real64) lambda_numbers(DIM)
@@ -64,7 +64,7 @@ program main
     call  gen_diffusion_matrix(DIM, 1.0_real64, B, diffusion_mat)
     print*,"Diffusion_matrix :)", diffusion_mat(1:5, 1:5)
   
-    call eval_drift(DIM, drift_mat, U, vector_drift)
+    call eval_drift(DIM, beta, theta, lambda_numbers, A, U, vector_drift)
     print*, "drift :)", vector_drift(1:5)
     call eval_diffusion(DIM, sigma, diffusion_mat, U, vector_diffusion)
     print*, "diffusion :)", vector_diffusion(1:5)

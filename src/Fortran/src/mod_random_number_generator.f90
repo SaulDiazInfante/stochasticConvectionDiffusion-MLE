@@ -1,8 +1,8 @@
 !> @ingroup modules
-!> @author E. Lince-Gomez, F. Baltazar-Larios, S. Diaz-Infante
+!> @author F. Baltazar-Larios, S. Diaz-Infante
 !> @brief This module implements the Box-Muller algorithm to generate
 !> random variables with standard Gaussian distribution from a
-!> uniform ditributed random variable. This module enclose tree functions.
+!> uniform distributed random variable. This module enclose tree functions.
 !> @see Kloeden & Platen 1992
 ! include 'mkl_vsl.f90'
 ! include 'mkl_vsl.f90'
@@ -14,8 +14,8 @@ module mod_random_number_generator
 contains
 
 !> @brief Returns a random variables with uniform distribution using the
-!! standar gfortran random number generator, the returned value is a real 32.
-!> @param [in] ix  Dummy paramer for the seed initialization for the random
+!! standard gfortran random number generator, the returned value is a real 32.
+!> @param [in] ix  Dummy parameter for the seed initialization for the random
 !> generator
 !    real(real32) function unif() result(unif_)
 !        !real(real32), intent(out) :: u

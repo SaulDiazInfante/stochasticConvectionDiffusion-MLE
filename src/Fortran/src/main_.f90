@@ -29,7 +29,7 @@ program main
   
     real(real64) x, lambda_matrix(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM)
     real(real64) lambda_numbers(DIM)
-    real(real64) lambdas(DIM), B(DIM,DIM)
+    real(real64) lambdas(DIM), B(DIM,DIM), B_(DIM)
     real(real64) hs(DIM), startx(DIM), Ls(DIM), AM(DIM*DIM)
     real(real64) drift_mat(DIM,DIM), diffusion_mat(DIM,DIM)
     real(real64) U(DIM), vector_drift(DIM), vector_diffusion(DIM)
@@ -44,13 +44,21 @@ program main
     U(:) = 1.0D0
     ! generate times
     call gen_observation_times(NOBS, DELTA, times)
-    print*,"times :)"
-   
+    print*,"(+++) times:)"
+    call print_vector_with_indices(times(1:10), 10)
+
     call gen_lambdas(DIM, Nx, Ny, L1, L2, lambda_numbers)
-    print*, "lambdas :)", lambda_numbers(50:70)
+    print*,"(+++) lambda eigenvalues :)"
+    call print_vector_with_indices(lambda_numbers(1:10),10)
    
     call MB(DIM, lambda_numbers, gamma, B)
-    print*, "B :)", B(1:5, 1:5)
+    print*, "(+++) B :)" 
+    call print_matrix_with_indices(B(1:5, 1:5) ,5 ,5)
+
+    call gen_matrix_diag_B(DIM, lambda_numbers, gamma, B_)
+    print*, "(++++) diag(B) :)"
+    call print_vector_with_indices(B_(1:5), 5)
+
    
     call gen_lambda_matrix(DIM, lambdas, lambda_matrix)
     print*,"lambda_matrix :)"
@@ -58,15 +66,19 @@ program main
     call MA(DIM, Nx, Ny, AM, A)
     print*,"A :)"
   
-    call gen_drift_matrix(DIM, theta, beta, lambda_matrix, A, drift_mat)
+    call gen_drift_matrix(DIM, theta, beta, lambda_numbers, A, drift_mat)
     print*,"Drift_matrix :)", drift_mat(1:5, 1:5)
-    ! TODO: diffusion
+  
     call  gen_diffusion_matrix(DIM, 1.0_real64, B, diffusion_mat)
     print*,"Diffusion_matrix :)", diffusion_mat(1:5, 1:5)
   
-    call eval_drift(DIM, beta, theta, lambda_numbers, A, U, vector_drift)
+    call eval_whole_drift(DIM, beta, theta, lambda_numbers, A, U, vector_drift)
+    print*, "whole drift :)", vector_drift(1:5)
+    
+    call eval_drift_at_u(DIM, beta, theta, drift_mat, U, vector_drift)
     print*, "drift :)", vector_drift(1:5)
-    call eval_diffusion(DIM, sigma, diffusion_mat, U, vector_diffusion)
+    
+    call eval_diffusion_at_u(DIM, sigma, diffusion_mat, U, vector_diffusion)
     print*, "diffusion :)", vector_diffusion(1:5)
   end program main
   

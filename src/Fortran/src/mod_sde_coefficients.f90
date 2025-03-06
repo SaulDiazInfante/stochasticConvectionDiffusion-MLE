@@ -5,6 +5,7 @@
 module mod_sde_coefficients
   use iso_fortran_env, only: int32, real64
   implicit none
+  
 
   ! Include the MKL module
   include 'mkl_blas.fi'
@@ -39,9 +40,8 @@ subroutine gen_drift_matrix(DIM, theta, beta, Lambda_diagonal, A, drift_mat)
     integer(int32) :: i
     
     drift_mat(:, :) = theta * A(:, :)
-    
     do i=1, DIM
-      drift_mat(i, i) = drift_mat(i, i) + Lambda_diagonal(i)
+      drift_mat(i, i) = drift_mat(i, i) + beta * Lambda_diagonal(i)
     end do
     drift_mat = -1.0_real64 * drift_mat
     return
@@ -94,23 +94,37 @@ subroutine gen_drift_matrix(DIM, theta, beta, Lambda_diagonal, A, drift_mat)
     integer(int32), intent(in) :: DIM
     real(real64), intent(in) :: beta
     real(real64), intent(in) :: theta
-    real(real64), intent(inout) :: Lambda_diagonal(DIM)
-    real(real64), intent(inout) :: A_matrix(DIM, DIM)
+    real(real64), intent(in) :: Lambda_diagonal(DIM)
+    real(real64), intent(in) :: A_matrix(DIM, DIM)
     real(real64), intent(in) :: U(DIM) 
     real(real64), intent(out) :: vector_drift(DIM)
     
     character(1) :: trans
-    integer(int32) :: i
-
+    real(real64) :: temp_diagonal(DIM)
+    real(real64), allocatable :: temp_matrix(:, :)
+    integer(int32) :: i, j, alloc_stat
+    
+    allocate(temp_matrix(DIM, DIM), stat=alloc_stat)
+    if (alloc_stat /= 0) then
+      print *, "Error: Failed to allocate temp_matrix in eval_whole_drift"
+      vector_drift = 0.0_real64 ! Set a safe default value
+      return
+    end if
     trans = 'N'  ! No transpose
+ 
+    temp_diagonal(:) = beta * Lambda_diagonal(:) 
+    temp_matrix(:, :) = theta * A_matrix(:, :)
     
-    Lambda_diagonal(:) = beta * Lambda_diagonal(:)
     do i = 1, DIM
-      A_matrix(i, i) = A_matrix(i, i) + Lambda_diagonal(i)
+      temp_matrix(i, i) = temp_matrix(i, i) + temp_diagonal(i)
     end do
+    vector_drift(:) = 0.0_real64
+    vector_drift = vector_drift - MATMUL(temp_matrix, U)
     
-    call dgemv(trans, DIM, DIM, -1.0_real64 * theta , A_matrix, DIM, U, 1, 0.0_real64, vector_drift, 1)
-  
+    deallocate(temp_matrix, stat=alloc_stat)
+    if (alloc_stat /= 0) then
+      print *, "*** WARNING: Failed to deallocate temp_matrix"
+    end if 
   end subroutine eval_whole_drift
 !> @brief 
 !> Given Matrix A, vector Lambda and parameters beta, theta, this   
@@ -139,18 +153,14 @@ subroutine eval_drift_at_u(&
     integer(int32), intent(in) :: DIM
     real(real64), intent(in) :: beta
     real(real64), intent(in) :: theta
-    real(real64), intent(out) :: drift_matrix(DIM, DIM)
+    real(real64), intent(in) :: drift_matrix(DIM, DIM)
     real(real64), intent(in) :: U(DIM) 
     real(real64), intent(out) :: vector_drift(DIM)
     
-    character(1) :: trans
+    integer(int32) :: i, j
     
-    trans = 'N'  ! No transpose
-            
-    call dgemv(&
-      & trans, DIM, DIM, &
-      & 1.0_real64 , drift_matrix, DIM,&
-      & U, 1, 0.0_real64, vector_drift, 1)
+    vector_drift(:) = 0.0_real64
+    vector_drift = vector_drift + MATMUL(drift_matrix, U)
   end subroutine eval_drift_at_u
 
 
@@ -172,16 +182,9 @@ subroutine eval_drift_at_u(&
     real(real64), intent(in) :: U(DIM) 
     real(real64), intent(out) :: vector_diffusion(DIM)
 
-    character(1) :: trans
-    integer(int32) :: info 
-    ! Set parameters for DGEMV
-    ! y = alpha*A*x + beta*y
-    
-    trans = 'N'  ! No transpose
-    call dgemv(&
-      & trans, DIM, DIM, &
-      & 1.0_real64, diffusion_matrix, &
-      DIM, U, 1, 0.0_real64, vector_diffusion, 1)
+    integer(int32) :: i, j
+    vector_diffusion(:) = 0.0_real64
+    vector_diffusion = vector_diffusion + MATMUL(diffusion_matrix, U)
   end subroutine eval_diffusion_at_u
 end module mod_sde_coefficients
 

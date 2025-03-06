@@ -94,13 +94,14 @@ contains
         )
         if (present(debug)) then
             if (debug) then
-              print *,"Error structure = ", stream
-              print *, "Gaussian stream: ", gaussian_sample(1:5)
+                print *,"Error structure = ", stream
+                print *, "Gaussian stream: ", gaussian_sample(1:5)
             end if
         end if
     !       ***** Deinitialize *****
         errcode = vslDeleteStream(stream)
     end subroutine mkl_gaussian_sampler
+
 end module mod_random_number_generator
 
 ! ifort -c -i8 -I"${MKLROOT}/include" mod_random_number_generator.f90

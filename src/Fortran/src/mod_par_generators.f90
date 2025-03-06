@@ -38,15 +38,18 @@ contains
   !> This function prints a matrix `A` of size `rows x cols`, including the column indices at the top 
   !> and row indices on the left for better readability.
   !>
+  !> @param[in]  name  string, label for matrix A.
   !> @param[in]  A     The matrix to print.
   !> @param[in]  rows  Number of rows in the matrix.
   !> @param[in]  cols  Number of columns in the matrix.
-  subroutine print_matrix_with_indices(A, rows, cols)
+  subroutine print_matrix_with_indices(name, A, rows, cols)
     implicit none
+    character(len=*), intent(in) :: name
     integer(int32), intent(in) :: rows, cols
     real(real64), intent(in) :: A(rows, cols)
     integer :: i, j
 
+    print *, "(++++) ", name
     print *, "------------------------------------------------"
     print *, ""
 
@@ -113,12 +116,13 @@ contains
   !>
   !> @param[in] V The vector to print.
   !> @param[in] N The size of the vector.
-  subroutine print_vector_with_indices(V, N)
+  subroutine print_vector_with_indices(name, V, N)
     implicit none
+    character(len=*), intent(in) :: name
     integer(int32), intent(in) :: N
     real(real64), intent(in) :: V(N)
     integer :: i
-    print*,""
+    print*,"(++++) vector ", name
     ! Print header
     print *, "  Index    Value"
     print *, "----------------"

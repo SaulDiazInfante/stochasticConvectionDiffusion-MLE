@@ -23,7 +23,7 @@ contains
 !        call random_number(unif_)
 !    end function unif
 !
-!> @brief Implementation of the Box-muller algorithm to genrate Gaussian random
+!> @brief Implementation of the Box-muller algorithm to generate Gaussian random
 !>  variables
 !> @param [in ] seed  initial value for the uniform random generator
 !> @todo: Try other random-number generators, such like mersene an others
@@ -51,17 +51,17 @@ contains
 !    end function boxmuller
 !> @brief Returns a number with Gaussian distribution using the Box-Muller
 !> algortihm.
-!> @details This function can be ommited in the case of a step forward
-!>  implelemtation
+!> @details This function can be omitted in the case of a step forward
+!>  implementation
 !> @param [in] seed a int32 with the initial value for the randim uniform
 !> generator
-!> @todo: Implement this furnction such that returns a realization path of the
+!> @todo: Implement this function such that returns a realization path of the
 !> standard Brownian motion
 !    real(real32) function normalvar()  result(r_x)
 !        r_x = boxmuller()
 !    end function normalvar
 !> @brief Returns an array of size buffer_size of gaussian random variables with mean
-!> mean_a amd standar deviation std_a
+!> mean_a amd standard deviation std_a
     subroutine mkl_gaussian_sampler(&
         &buffer_size, &
         &mean_a, &

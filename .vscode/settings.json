@@ -6,9 +6,10 @@
         "enddo",
         "frontpage",
         "inout",
+        "iset",
         "mathbf",
         "mathcal",
         "newunit"
     ],
-    "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran/src"
+    "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran"
 }

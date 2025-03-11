@@ -163,8 +163,6 @@ subroutine eval_drift_at_u(&
     vector_drift = vector_drift + MATMUL(drift_matrix, U)
   end subroutine eval_drift_at_u
 
-
-
 !> @brief compute the diffusion coefficient of SDE equation
 !!  @f$ dU = -(\beta \Lambda  + \theta A) U dt + \sigma B U dW(t) @f$. 
 !!
@@ -186,5 +184,27 @@ subroutine eval_drift_at_u(&
     vector_diffusion(:) = 0.0_real64
     vector_diffusion = vector_diffusion + MATMUL(diffusion_matrix, U)
   end subroutine eval_diffusion_at_u
+
+
+!> @brief compute the diffusion coefficient of SDE equation
+!!  @f$ dU = -(\beta \Lambda  + \theta A) U dt + \sigma B U dW(t) @f$. 
+!!
+!! @param[in]   DIM           int32 matrix dimension
+!! @param[in]   sigma real64
+!! @param[in]   diffusion_matrix  real64(DIM, DIM) current values in the array
+!! @param[in]   U                 real64(DIM)
+!! @param[out]  vector_diffusion  real64(DIM  \f $\sigma B U \f$. 
+
+  subroutine eval_diagonal_diffusion_at_u(DIM, sigma, diffusion_diagonal, U, vector_diffusion)
+    implicit none
+    integer(int32), intent(in) :: DIM
+    real(real64), intent(in) :: sigma
+    real(real64), intent(in) :: diffusion_diagonal(DIM)
+    real(real64), intent(in) :: U(DIM) 
+    real(real64), intent(out) :: vector_diffusion(DIM)
+
+    vector_diffusion(:) = 0.0_real64
+    vector_diffusion =   diffusion_diagonal(:) * U(:)
+  end subroutine eval_diagonal_diffusion_at_u
 end module mod_sde_coefficients
 

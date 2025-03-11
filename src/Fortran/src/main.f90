@@ -1,8 +1,7 @@
-!! ifx -qmkl mod_sde_coefficients.f90 mod_par_generators.f90 mod_random_number_generator.f90 mkl_vsl.f90 main.f90
+!! ifx -qmkl mod_sde_coefficients.f90 mod_par_generators.f90 mkl_vsl.f90mod_random_number_generator.f90 main.f90
 program main
   !! This module wraps the main Fortran functionality to be called from C
   use iso_fortran_env, only: int32, real64
-  
   use mod_par_generators
   use mod_sde_coefficients
   use mod_random_number_generator
@@ -34,7 +33,7 @@ program main
   real(kind=8), allocatable :: gaussian_sample(:)
 
 ! load matrix A entries
-  open(99, file="../src/MatrixA.dat")
+  open(99, file="../MatrixA.dat")
     read(99,*) AM
   close(99)
 
@@ -63,7 +62,12 @@ program main
   call print_matrix_with_indices("Drift matrix", drift_mat(1:5, 1:5) ,5 ,5)
 
   call  gen_diffusion_matrix(DIM, 1.0_real64, B, diffusion_mat)
-  call print_matrix_with_indices("Diffusion matrix", diffusion_mat(1:5, 1:5) ,5 ,5)
+  call print_matrix_with_indices(&
+    &"Diffusion matrix", &
+    &diffusion_mat(1:5, 1:5) ,&
+    &5 ,&
+    &5 &
+  &)
 
   call eval_whole_drift(DIM, beta, theta, lambda_numbers, A, U, vector_drift)
   call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
@@ -73,7 +77,10 @@ program main
   
   call eval_diffusion_at_u(DIM, sigma, diffusion_mat, U, vector_diffusion)
   call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)
-  mean_a = 0.0
+  call eval_diagonal_diffusion_at_u(DIM, sigma, B_, U, vector_diffusion)
+  call print_vector_with_indices("diffusion(U) from diag(B)", vector_diffusion(1:5), 5)
+  
+    mean_a = 0.0
   std_a = 1.0
   call mkl_gaussian_sampler(10000, mean_a, std_a, SEED, gaussian_sample)
   call print_vector_with_indices("Gaussian(mu, std)", gaussian_sample(9000:9010), 10)

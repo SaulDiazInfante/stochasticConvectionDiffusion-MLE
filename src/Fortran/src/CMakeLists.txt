@@ -20,6 +20,7 @@ set(SRC_FILES
     mod_par_generators.f90
     mkl_vsl.f90
     mod_random_number_generator.f90
+    mod_sde_solver
     main.f90
 )
 set(CMAKE_Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}")
@@ -41,12 +42,13 @@ add_dependencies(my_fortran_program
     mod_par_generators
     mkl_vsl
     mod_random_number_generator
+    mod_sde_solver
 )
 add_library(mod_sde_coefficients OBJECT mod_sde_coefficients.f90)
 add_library(mod_par_generators OBJECT mod_par_generators.f90)
 add_library(mkl_vsl OBJECT mkl_vsl.f90)
 add_library(mod_random_number_generator OBJECT mod_random_number_generator.f90)
-
+add_library(mod_sde_solver OBJECT mod_sde_solver.f90)
 # Include the module directory for compilation
 target_include_directories(my_fortran_program PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 

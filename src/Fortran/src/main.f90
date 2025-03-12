@@ -1,10 +1,11 @@
-!! ifx -qmkl mod_sde_coefficients.f90 mod_par_generators.f90 mkl_vsl.f90mod_random_number_generator.f90 main.f90
+!! ifx -qmkl mod_sde_coefficients.f90 mod_par_generators.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
 program main
   !! This module wraps the main Fortran functionality to be called from C
   use iso_fortran_env, only: int32, real64
   use mod_par_generators
   use mod_sde_coefficients
   use mod_random_number_generator
+  use mod_sde_solver
   implicit none
   integer(int32), parameter :: Nx = 10
   integer(int32), parameter :: Ny = 10
@@ -27,10 +28,11 @@ program main
   real(real64) hs(DIM), startx(DIM), Ls(DIM), AM(DIM*DIM)
   real(real64) drift_mat(DIM,DIM), diffusion_mat(DIM,DIM)
   real(real64) U(DIM), vector_drift(DIM), vector_diffusion(DIM)
-  real(real64) brownian(nobs,DIM), HT
+  real(real64) vectorial_winner_delta(DIM), initial_vector_winner(DIM)
+  real(real64) brownian(nobs,DIM), HT, winner_delta
   real(real64) :: times(0:nobs)
-  real(kind=8) :: mean_a, std_a
-  real(kind=8), allocatable :: gaussian_sample(:)
+  real(real64) :: mean_a, std_a
+  real(real64), allocatable :: gaussian_sample(:)
 
 ! load matrix A entries
   open(99, file="../MatrixA.dat")
@@ -38,6 +40,8 @@ program main
   close(99)
 
   U(:) = 1.0D0
+  vectorial_winner_delta(:) = 0.0D0
+  initial_vector_winner(:) = 0.0D0
   ! generate times
   call gen_observation_times(NOBS, DELTA, times)
   call print_vector_with_indices("times", times(1:10), 10)
@@ -80,8 +84,26 @@ program main
   call eval_diagonal_diffusion_at_u(DIM, sigma, B_, U, vector_diffusion)
   call print_vector_with_indices("diffusion(U) from diag(B)", vector_diffusion(1:5), 5)
   
-    mean_a = 0.0
+  mean_a = 0.0
   std_a = 1.0
-  call mkl_gaussian_sampler(10000, mean_a, std_a, SEED, gaussian_sample)
-  call print_vector_with_indices("Gaussian(mu, std)", gaussian_sample(9000:9010), 10)
+  call mkl_gaussian_sampler(10000, mean_a, std_a, gaussian_sample, SEED)
+  call print_vector_with_indices(&
+    &"Gaussian(mu, std)",&
+    &gaussian_sample(9000:9010), &
+    &10)
+
+  call winner_increment(0.1_real64, 1000, 0.0_real64, winner_delta)
+  print *, "Winner delta: ", winner_delta 
+  call vectorial_winner_increment(&
+    & 0.1_real64, &
+    & DIM, &
+    & 100, & 
+    &initial_vector_winner, &
+    & vectorial_winner_delta &
+  &)
+  call print_vector_with_indices(&
+    &"Winner delta", &
+    & vectorial_winner_delta(90:95), &
+    & 5 &
+  &)
 end program main

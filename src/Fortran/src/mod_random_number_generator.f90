@@ -13,81 +13,40 @@ module mod_random_number_generator
     implicit none
 contains
 
-!> @brief Returns a random variables with uniform distribution using the
-!! standard gfortran random number generator, the returned value is a real 32.
-!> @param [in] ix  Dummy parameter for the seed initialization for the random
-!> generator
-!    real(real32) function unif() result(unif_)
-!        !real(real32), intent(out) :: u
-!        ! call random_seed()
-!        call random_number(unif_)
-!    end function unif
-!
-!> @brief Implementation of the Box-muller algorithm to generate Gaussian random
-!>  variables
-!> @param [in ] seed  initial value for the uniform random generator
-!> @todo: Try other random-number generators, such like mersene an others
-!    real(real32) function boxmuller()
-!        integer(int32) iset
-!        real fac, gset, rsq, v1, v2, seed
-!        save iset, gset
-!        data iset/0/
-!        1 if (iset.eq.0) then
-!            call random_number(seed)
-!            v1 = 2. * seed - 1.0
-!            call random_number(seed)
-!            v2 = 2. * seed - 1.0
-!            rsq = v1 ** 2 + v2 ** 2
-!            if (rsq.ge.1..or.rsq.eq.0)goto 1
-!                fac = sqrt(-2.0 * log(rsq) / rsq)
-!                gset = v1 * fac
-!                boxmuller = v2 * fac
-!                iset = 1
-!            else
-!                boxmuller=gset
-!                iset=0
-!            endif
-!          return
-!    end function boxmuller
-!> @brief Returns a number with Gaussian distribution using the Box-Muller
-!> algortihm.
-!> @details This function can be omitted in the case of a step forward
-!>  implementation
-!> @param [in] seed a int32 with the initial value for the randim uniform
-!> generator
-!> @todo: Implement this function such that returns a realization path of the
-!> standard Brownian motion
-!    real(real32) function normalvar()  result(r_x)
-!        r_x = boxmuller()
-!    end function normalvar
 !> @brief Returns an array of size buffer_size of gaussian random variables with mean
 !> mean_a amd standard deviation std_a
     subroutine mkl_gaussian_sampler(&
         &buffer_size, &
         &mean_a, &
         &std_a, &
-        &user_seed, &
         &gaussian_sample, &
+        &user_seed, &
         &debug&
     &)
         integer, intent(in) :: buffer_size
-        real(kind=8), intent(in) :: mean_a, std_a
+        real(kind=8), intent(in) :: mean_a, std_a 
         real(kind=8), intent(out), allocatable :: gaussian_sample(:)
+        integer, intent(in), optional :: user_seed
         logical, intent(in), optional :: debug
         TYPE (VSL_STREAM_STATE) :: stream
+        
         integer(kind=4) errcode
         integer(kind=4) i, j
-        integer, intent(in), optional :: user_seed
+        real (kind=8) :: rand
         integer brng, seed, method, n
+        integer, allocatable :: new (:), old(:)
+        integer, parameter :: lower = 1, upper = 100
         if (present(user_seed)) then
             seed = user_seed
         else
-            seed = 123
+            call random_seed()  ! Initialize the random number generator
+            call random_number(rand)
+            seed = lower + int(rand * (upper - lower + 1))
         end if
         gaussian_sample = [(0.0, i=1, buffer_size)]
     !       ***** Initializing *****
-        brng = VSL_BRNG_MT19937
-        method = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2
+        brng = VSL_BRNG_MT19937 !! Mersenne Twister
+        method = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2 !! For Gaussian distribution
         errcode = vslNewStream(stream, brng, seed)
         errcode = vdRngGaussian(&
             method, stream, buffer_size, gaussian_sample, mean_a, std_a&
@@ -102,6 +61,58 @@ contains
         errcode = vslDeleteStream(stream)
     end subroutine mkl_gaussian_sampler
 
+    subroutine mkl_array_gaussian_sampler(&
+        &n_row, &
+        &n_col, &
+        &mean_a, &
+        &std_a, &
+        &gaussian_sample, &
+        &user_seed, &
+        &debug&
+    &)
+        integer(int32), intent(in) :: n_row, n_col
+        real(kind=8), intent(in) :: mean_a, std_a 
+        real(kind=8), intent(out), dimension(:,:), allocatable :: gaussian_sample
+        integer, intent(in), optional :: user_seed
+        logical, intent(in), optional :: debug
+        TYPE (VSL_STREAM_STATE) :: stream
+        
+        integer(kind=4) errcode
+        integer(kind=4) i, j
+        real (kind=8) :: rand
+        integer brng, seed, method, n
+        integer, allocatable :: new (:), old(:)
+        integer, parameter :: lower = 1, upper = 100
+        if (present(user_seed)) then
+            seed = user_seed
+        else
+            call random_seed()  ! Initialize the random number generator
+            call random_number(rand)
+            seed = lower + int(rand * (upper - lower + 1))
+        end if
+        gaussian_sample = reshape([(0.0, i=1, n_row*n_col)], [n_row, n_col])
+
+    !       ***** Initializing *****
+        brng = VSL_BRNG_MT19937 !! Mersenne Twister
+        method = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2 !! For Gaussian distribution
+        errcode = vslNewStream(stream, brng, seed)
+        errcode = vdRngGaussian(&
+            &method, &
+            & stream, & 
+            & n_row*n_col, &
+            & gaussian_sample, & 
+            &mean_a, &
+            & std_a&
+        )
+        if (present(debug)) then
+            if (debug) then
+                print *,"Error structure = ", stream
+                print *, "Gaussian stream: ", gaussian_sample(1:5, 1:5)
+            end if
+        end if
+    !       ***** Deinitialize *****
+        errcode = vslDeleteStream(stream)
+    end subroutine mkl_array_gaussian_sampler
 end module mod_random_number_generator
 
 ! ifort -c -i8 -I"${MKLROOT}/include" mod_random_number_generator.f90

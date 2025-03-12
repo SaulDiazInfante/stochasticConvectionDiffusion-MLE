@@ -8,7 +8,6 @@
 !! see Kloeden & Platten (1994)
  module mod_sde_solver
   use iso_fortran_env, only: int32, real64
-  ! use MKL_VSL
   use mod_random_number_generator
 
   implicit none

@@ -7,6 +7,7 @@ program main
   use mod_random_number_generator
   use mod_sde_solver
   implicit none
+  
   integer(int32), parameter :: Nx = 10
   integer(int32), parameter :: Ny = 10
   integer(int32), parameter :: DIM = Nx * Ny
@@ -14,20 +15,20 @@ program main
   integer(int32), parameter :: nobs= 1000
   
   real(real64), parameter :: PI = 2.D0 * DASIN(1.D0)
-  real(real64),  parameter :: theta = 0.5_real64
-  real(real64),  parameter :: beta = 0.5_real64
-  real(real64),  parameter :: gamma = 1.0_real64
-  real(real64),  parameter :: sigma = 0.2_real64
-  real(real64),  parameter :: delta = 0.0001_real64
-  real(real64),  parameter :: L1 = 5.0_real64
-  real(real64),  parameter :: L2 = 5.0_real64
+  real(real64), parameter :: theta = 0.5_real64
+  real(real64), parameter :: beta = 0.5_real64
+  real(real64), parameter :: gamma = 1.0_real64
+  real(real64), parameter :: sigma = 0.2_real64
+  real(real64), parameter :: delta = 0.0001_real64
+  real(real64), parameter :: L1 = 5.0_real64
+  real(real64), parameter :: L2 = 5.0_real64
 
   real(real64) x, lambda_matrix(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM)
   real(real64) lambda_numbers(DIM)
   real(real64) lambdas(DIM), B(DIM,DIM), B_(DIM)
   real(real64) hs(DIM), startx(DIM), Ls(DIM), AM(DIM*DIM)
   real(real64) drift_mat(DIM,DIM), diffusion_mat(DIM,DIM)
-  real(real64) U(DIM), vector_drift(DIM), vector_diffusion(DIM)
+  real(real64) U(DIM), U_(DIM), vector_drift(DIM), vector_diffusion(DIM)
   real(real64) vectorial_winner_delta(DIM), initial_vector_winner(DIM)
   real(real64) brownian(nobs,DIM), HT, winner_delta
   real(real64) :: times(0:nobs)
@@ -40,6 +41,7 @@ program main
   close(99)
 
   U(:) = 1.0D0
+  u_(:) = 0.0D0
   vectorial_winner_delta(:) = 0.0D0
   initial_vector_winner(:) = 0.0D0
   ! generate times
@@ -106,4 +108,18 @@ program main
     & vectorial_winner_delta(90:95), &
     & 5 &
   &)
+
+  call milstein_step(&
+    &DIM, &
+    &delta, &
+    &beta, &
+    &theta, &
+    &drift_mat, &
+    &sigma, &
+    &vector_diffusion, &
+    &U, &
+    &vectorial_winner_delta, &
+    &U_ &  
+  &)
+  call print_vector_with_indices("U_milstein", U_(1:DIM), DIM)
 end program main

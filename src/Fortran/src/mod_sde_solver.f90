@@ -9,42 +9,10 @@
  module mod_sde_solver
   use iso_fortran_env, only: int32, real64
   use mod_random_number_generator
-
+  use mod_par_generators
+  use mod_sde_coefficients
   implicit none
   contains
-
-  !---------------------------------------------------------------------------
-  !> @brief Performs a single Brownian motion step in a stochastic differential
-  !> equation solver.
-  !>
-  !> This subroutine updates the position vector `endx` by performing a single
-  !> Brownian motion step starting from the position vector `startx`. The step
-  !> size is determined by the parameter `delta`.
-  !>
-  !> @param[in] DIM The dimension of the position vectors.
-  !> @param[in] delta The time step size for the Brownian motion.
-  !> @param[in] n_omega The number of random variables (not used in current implementation).
-  !> @param[in] startx The starting position vector of dimension `DIM`.
-  !> @param[inout] endx The updated position vector of dimension `DIM`.
-  !---------------------------------------------------------------------------
-  pure subroutine BrownianStep(DIM, delta, n_omega, startx, endx)
-    implicit none
-    integer(int32), intent(in) :: DIM
-    integer(int32), intent(in) :: n_omega
-    real(real64), intent(in) :: delta
-    real(real64), intent(in) :: startx(DIM)
-    real(real64), intent(inout) :: endx(DIM)
-    !!
-    real(real64) xi, dd, ddW(n_omega), dW
-    integer(int32) i
-    
-    !! TODO: Call mkl rng to create a vectorized version of the below code.
-    do i =1, DIM
-      !v call normalvar(var)
-      endx(i) = startx(i) + sqrt(delta) !*var
-    end do
-    return
-  end subroutine BrownianStep
 
   !> @brief Computes the increment of a Wiener process over a given time interval.
   !!
@@ -129,9 +97,39 @@
     end do
     return
   end subroutine vectorial_winner_increment
+ 
+!---------------------------------------------------------------------------
+  !> @brief Performs a single Brownian motion step in a stochastic differential
+  !> equation solver.
+  !>
+  !> This subroutine updates the position vector `endx` by performing a single
+  !> Brownian motion step starting from the position vector `startx`. The step
+  !> size is determined by the parameter `delta`.
+  !>
+  !> @param[in] DIM The dimension of the position vectors.
+  !> @param[in] delta The time step size for the Brownian motion.
+  !> @param[in] n_omega The number of random variables (not used in current implementation).
+  !> @param[in] startx The starting position vector of dimension `DIM`.
+  !> @param[inout] endx The updated position vector of dimension `DIM`.
+!---------------------------------------------------------------------------
+  subroutine BrownianStep(DIM, delta, n_omega, startx, endx)
+    implicit none
+    integer(int32), intent(in) :: DIM
+    integer(int32), intent(in) :: n_omega
+    real(real64), intent(in) :: delta
+    real(real64), intent(in) :: startx(DIM)
+    real(real64), intent(inout) :: endx(DIM)
+    !!
+    real(real64) xi, dd, dW(DIM)
+    integer(int32) i
+    
+    !! TODO: Call mkl rng to create a vectorized version of the below code.
+    call vectorial_winner_increment(delta, DIM, n_omega, startx, dW) 
+    endx(:) = startx(:) + dW(:)
+    return
+  end subroutine BrownianStep
 
-  
-  
+!---------------------------------------------------------------------------
   !> @brief Performs a single Milstein step for a stochastic differential equation (SDE).
   !>
   !> @param[in] DIM The dimension of the SDE system.
@@ -146,32 +144,45 @@
   !> stochastic differential equations. It updates the state of the system
   !> from `startx` to `endx` using the given drift (`alpha`) and diffusion
   !> (`sigma`) coefficients, and the Brownian motion increments (`brown`).
-  pure subroutine MilsteinStep(DIM, delta, startx, alpha, sigma, endx, brown)
+
+  subroutine milstein_step(&
+    &DIM , &
+    &delta, &
+    &beta, &
+    &theta, &
+    &drift_mat, &
+    &sigma, &
+    &vector_diffusion, &
+    &current_u, &
+    &brownian_increment, &
+    &next_u &
+  &)
     implicit none
     integer(int32), intent(in) :: DIM
     real(real64), intent(in) :: delta
-    real(real64), intent(in) :: startx(DIM)
-    real(real64), intent(inout) :: endx(DIM)
-    real(real64), intent(in) :: alpha(DIM)
-    real(real64), intent(in) :: sigma(DIM)
-    real(real64), intent(inout) :: brown(DIM)
-    real(real64) W(DIM), xx(DIM), sum_aux
-
-    integer(int32) i, j, n_omega
-    n_omega = 100
+    real(real64), intent(in) :: beta
+    real(real64), intent(in) :: theta
+    real(real64), intent(in) :: drift_mat(DIM, DIM)
+    real(real64), intent(in) :: sigma
+    real(real64), intent(in) :: vector_diffusion(DIM)
+    real(real64), intent(in) :: current_u(DIM)
+    real(real64), intent(in) :: brownian_increment(DIM)
+    real(real64), intent(out) :: next_u(DIM)
     
-    do i=1,DIM
-      xx(i)=0.0
-    end do
-
-    call BrownianStep(DIM, delta, n_omega, xx, W)
-    do i=1,DIM
-      sum_aux = 0.0
-      sum_aux = sum_aux + sigma(i) * W(i)
-      endx(i) = startx(i) + alpha(i) * delta + sum_aux
-      brown(i)=W(i)
-    end do
-   return
-  end subroutine MilsteinStep
-
-  end module mod_sde_solver
+    real(real64) u_drift (DIM)
+    real(real64) u_diffusion (DIM)
+    real(real64) u_em (DIM)
+    u_drift(:) = 0.0_real64
+    u_diffusion(:) = 0.0_real64   
+    call eval_drift_at_u(DIM, beta, theta, drift_mat, current_u, u_drift)
+    call eval_diagonal_diffusion_at_u(&
+      &DIM, sigma, vector_diffusion, current_u, u_diffusion&
+    ) 
+    u_em(:) = 0.0_real64
+    u_em(:) = current_u(:) &
+      & + u_drift(:) * delta &
+      & + vector_diffusion(:) * brownian_increment(:)
+    next_u(:) = u_em(:)
+    return
+  end subroutine milstein_step
+end module mod_sde_solver

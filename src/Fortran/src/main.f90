@@ -1,125 +1,105 @@
-!! ifx -qmkl mod_sde_coefficients.f90 mod_par_generators.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
+!! ifx -qmkl mod_global_parameters_and_shared_data.f90 mod_par_generators.f90 mod_sde_coefficients.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
 program main
   !! This module wraps the main Fortran functionality to be called from C
   use iso_fortran_env, only: int32, real64
+  use mod_global_parameters_and_shared_data
   use mod_par_generators
   use mod_sde_coefficients
   use mod_random_number_generator
   use mod_sde_solver
   implicit none
   
-  integer(int32), parameter :: Nx = 10
-  integer(int32), parameter :: Ny = 10
-  integer(int32), parameter :: DIM = Nx * Ny
-  integer(int32), parameter :: SEED = 765431
-  integer(int32), parameter :: nobs= 1000
-  
-  real(real64), parameter :: PI = 2.D0 * DASIN(1.D0)
-  real(real64), parameter :: theta = 0.5_real64
-  real(real64), parameter :: beta = 0.5_real64
-  real(real64), parameter :: gamma = 1.0_real64
-  real(real64), parameter :: sigma = 0.2_real64
-  real(real64), parameter :: delta = 0.0001_real64
-  real(real64), parameter :: L1 = 5.0_real64
-  real(real64), parameter :: L2 = 5.0_real64
+   
+  print *, "DIM: ", DIM
+  print *, "Nx: ", Nx
+  print *, "Ny: ", Ny
+  print *, "SEED: ", SEED
+  print *, "nobs: ", nobs
+  print *, "PI: ", PI   
+  print *, "theta: ", theta
+  print *, "beta: ", beta
+  print *, "gamma: ", gamma
+  print *, "sigma: ", sigma
+  print *, "delta: ", delta
+  print *, "L1: ", L1
+  print *, "L2: ", L2 
 
-  real(real64) x, lambda_matrix(DIM,DIM), A(DIM,DIM), path(0:nobs,DIM)
-  real(real64) lambda_numbers(DIM)
-  real(real64) lambdas(DIM), B(DIM,DIM), B_(DIM)
-  real(real64) hs(DIM), startx(DIM), Ls(DIM), AM(DIM*DIM)
-  real(real64) drift_mat(DIM,DIM), diffusion_mat(DIM,DIM)
-  real(real64) U(DIM), U_(DIM), vector_drift(DIM), vector_diffusion(DIM)
-  real(real64) vectorial_winner_delta(DIM), initial_vector_winner(DIM)
-  real(real64) brownian(nobs,DIM), HT, winner_delta
-  real(real64) :: times(0:nobs)
-  real(real64) :: mean_a, std_a
-  real(real64), allocatable :: gaussian_sample(:)
+  call allocate_dynamic_memory()
 
-! load matrix A entries
-  open(99, file="../MatrixA.dat")
-    read(99,*) AM
-  close(99)
 
-  U(:) = 1.0D0
-  u_(:) = 0.0D0
-  vectorial_winner_delta(:) = 0.0D0
-  initial_vector_winner(:) = 0.0D0
-  ! generate times
-  call gen_observation_times(NOBS, DELTA, times)
+  call gen_observation_times()
   call print_vector_with_indices("times", times(1:10), 10)
-
-  call gen_lambdas(DIM, Nx, Ny, L1, L2, lambda_numbers)
-  call print_vector_with_indices("eigen values", lambda_numbers(1:10),10)
-  
-  call MB(DIM, lambda_numbers, gamma, B)
+  call gen_eigen_values()
+  call print_vector_with_indices("eigen values", eigen_values(1:10),10)
+  call build_matrix_B(eigen_values, B)
   call print_matrix_with_indices("B", B(1:5, 1:5) ,5 ,5)
 
-  call gen_matrix_diag_B(DIM, lambda_numbers, gamma, B_)
-  call print_vector_with_indices("diag(B)", B_(1:5), 5)
+  ! call gen_matrix_diag_B(DIM, eigen_values, gamma, B_)
+  ! call print_vector_with_indices("diag(B)", B_(1:5), 5)
 
   
-  call gen_lambda_matrix(DIM, lambda_numbers, lambda_matrix)
-  call print_matrix_with_indices("Lambda", lambda_matrix(1:5, 1:5) ,5 ,5)
+  ! call gen_lambda_matrix(DIM, eigen_values, lambda_matrix)
+  ! call print_matrix_with_indices("Lambda", lambda_matrix(1:5, 1:5) ,5 ,5)
 
-  call MA(DIM, Nx, Ny, AM, A)
-  call print_matrix_with_indices("A", lambda_matrix(1:5, 1:5) ,5 ,5)
+  ! call MA(DIM, Nx, Ny, AM, A)
+  ! call print_matrix_with_indices("A", lambda_matrix(1:5, 1:5) ,5 ,5)
 
-  call gen_drift_matrix(DIM, theta, beta, lambda_numbers, A, drift_mat)
-  call print_matrix_with_indices("Drift matrix", drift_mat(1:5, 1:5) ,5 ,5)
+  ! call gen_drift_matrix(DIM, theta, beta, eigen_values, A, drift_mat)
+  ! call print_matrix_with_indices("Drift matrix", drift_mat(1:5, 1:5) ,5 ,5)
 
-  call  gen_diffusion_matrix(DIM, 1.0_real64, B, diffusion_mat)
-  call print_matrix_with_indices(&
-    &"Diffusion matrix", &
-    &diffusion_mat(1:5, 1:5) ,&
-    &5 ,&
-    &5 &
-  &)
+  ! call  gen_diffusion_matrix(DIM, 1.0_real64, B, diffusion_mat)
+  ! call print_matrix_with_indices(&
+  !   &"Diffusion matrix", &
+  !   &diffusion_mat(1:5, 1:5) ,&
+  !   &5 ,&
+  !   &5 &
+  ! &)
 
-  call eval_whole_drift(DIM, beta, theta, lambda_numbers, A, U, vector_drift)
-  call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
+  ! call eval_whole_drift(DIM, beta, theta, eigen_values, A, U, vector_drift)
+  ! call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
   
-  call eval_drift_at_u(DIM, beta, theta, drift_mat, U, vector_drift)
-  call print_vector_with_indices("drift(U)", vector_drift(1:5), 5)
+  ! call eval_drift_at_u(DIM, beta, theta, drift_mat, U, vector_drift)
+  ! call print_vector_with_indices("drift(U)", vector_drift(1:5), 5)
   
-  call eval_diffusion_at_u(DIM, sigma, diffusion_mat, U, vector_diffusion)
-  call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)
-  call eval_diagonal_diffusion_at_u(DIM, sigma, B_, U, vector_diffusion)
-  call print_vector_with_indices("diffusion(U) from diag(B)", vector_diffusion(1:5), 5)
+  ! call eval_diffusion_at_u(DIM, sigma, diffusion_mat, U, vector_diffusion)
+  ! call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)
+  ! call eval_diagonal_diffusion_at_u(DIM, sigma, B_, U, vector_diffusion)
+  ! call print_vector_with_indices("diffusion(U) from diag(B)", vector_diffusion(1:5), 5)
   
-  mean_a = 0.0
-  std_a = 1.0
-  call mkl_gaussian_sampler(10000, mean_a, std_a, gaussian_sample, SEED)
-  call print_vector_with_indices(&
-    &"Gaussian(mu, std)",&
-    &gaussian_sample(9000:9010), &
-    &10)
+  ! mean_a = 0.0
+  ! std_a = 1.0
+  ! call mkl_gaussian_sampler(10000, mean_a, std_a, gaussian_sample, SEED)
+  ! call print_vector_with_indices(&
+  !   &"Gaussian(mu, std)",&
+  !   &gaussian_sample(9000:9010), &
+  !   &10)
 
-  call winner_increment(0.1_real64, 1000, 0.0_real64, winner_delta)
-  print *, "Winner delta: ", winner_delta 
-  call vectorial_winner_increment(&
-    & 0.1_real64, &
-    & DIM, &
-    & 100, & 
-    &initial_vector_winner, &
-    & vectorial_winner_delta &
-  &)
-  call print_vector_with_indices(&
-    &"Winner delta", &
-    & vectorial_winner_delta(90:95), &
-    & 5 &
-  &)
+  ! call winner_increment(0.1_real64, 1000, 0.0_real64, winner_delta)
+  ! print *, "Winner delta: ", winner_delta 
+  ! call vectorial_winner_increment(&
+  !   & 0.1_real64, &
+  !   & DIM, &
+  !   & 100, & 
+  !   &initial_vector_winner, &
+  !   & vectorial_winner_delta &
+  ! &)
+  ! call print_vector_with_indices(&
+  !   &"Winner delta", &
+  !   & vectorial_winner_delta(90:95), &
+  !   & 5 &
+  ! &)
 
-  call milstein_step(&
-    &DIM, &
-    &delta, &
-    &beta, &
-    &theta, &
-    &drift_mat, &
-    &sigma, &
-    &vector_diffusion, &
-    &U, &
-    &vectorial_winner_delta, &
-    &U_ &  
-  &)
-  call print_vector_with_indices("U_milstein", U_(1:DIM), DIM)
+  ! call milstein_step(&
+  !   &DIM, &
+  !   &delta, &
+  !   &beta, &
+  !   &theta, &
+  !   &drift_mat, &
+  !   &sigma, &
+  !   &vector_diffusion, &
+  !   &U, &
+  !   &vectorial_winner_delta, &
+  !   &U_ &  
+  ! &)
+  ! call print_vector_with_indices("U_milstein", U_(1:DIM), DIM)
 end program main

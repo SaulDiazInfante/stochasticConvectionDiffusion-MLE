@@ -8,6 +8,7 @@
 !> conforming to a spectral decomposition.
 module mod_par_generators
   use iso_fortran_env, only: int32, real64
+  use mod_global_parameters_and_shared_data
   implicit none
 contains
 
@@ -142,13 +143,9 @@ contains
   !> @param[in]  nobs  The number of observations in the time interval.
   !> @param[in]  delta Step-size, such that @f$ nobs \cdot \delta = T @f$.
   !> @param[out] times Array of observation times.
-  pure subroutine gen_observation_times(nobs, delta, times)
+  subroutine gen_observation_times()
     implicit none
-    integer(int32), intent(in) :: nobs
     integer(int32) :: i
-    real(real64), intent(in) :: delta
-    real(real64), intent(out) :: times(0:nobs)
-    
     do i=0, nobs
       times(i) = i * delta
     end do
@@ -168,14 +165,9 @@ contains
   !> @param[in]  Ny   Number of eigen basic vectors in the y-direction.
   !> @param[in]  L1   Length in the x-direction.
   !> @param[in]  L2   Length in the y-direction.
-  !> @param[out] lambda_numbers Computed eigenvalues.
-  pure subroutine gen_lambdas(DIM, Nx, Ny, L1, L2, lambda_numbers)
+  !> @param[out] eigen_values Computed eigenvalues.
+  subroutine gen_eigen_values()
     implicit none
-    integer(int32), intent(in) :: DIM, Nx, Ny
-    real(real64), intent(in) :: L1, L2
-    real(real64), intent(out):: lambda_numbers(DIM)
-    
-    real(real64), parameter :: PI = 2.D0 * DASIN(1.D0)
     real(real64) pi_square, L1_res, L2_res, lambda_ij
     integer(int32) i, j, k, m, l, n
 
@@ -192,14 +184,14 @@ contains
             n  = k + (l - 1) * Ny
             if (m == n) then
               lambda_ij = pi_square * ((i/L1)**2 + (j/L2)**2)
-              lambda_numbers(m) = lambda_ij
+              eigen_values(m) = lambda_ij
             endif
-          enddo
-        enddo
-      enddo
-    enddo
+          end do
+        end do
+      end do
+    end do
     return
-  end subroutine gen_lambdas
+  end subroutine gen_eigen_values
 
   !> @brief Generates the matrix @f$ B @f$ based on eigenvalues.
   !> 
@@ -213,20 +205,16 @@ contains
   !> @param[in]  lambdas  Array of eigenvalues.
   !> @param[in]  gamma    Power exponent.
   !> @param[out] B        The computed diagonal matrix.
-  pure subroutine MB(DIM, lambdas, gamma, B)
+  subroutine build_matrix_B(eigen_values, matrix_B)
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: gamma
-    real(real64), intent(in) :: lambdas(DIM)
-    real(real64), intent(out) :: B(DIM, DIM)
+    real(real64), intent(in) :: eigen_values(DIM)
+    real(real64), intent(inout) :: matrix_B(DIM, DIM)
     integer(int32) i
-
-    B(:,:) = 0.0
     do i=1, DIM
-      B(i,i) = lambdas(i) ** (-gamma)
-    enddo
+      matrix_B(i, i) = eigen_values(i) ** (-gamma)
+    end do
     return
-  end subroutine MB
+  end subroutine build_matrix_B
 
   !> @brief Generates the elements of the diagonal matrix @f$ B @f$ based on eigenvalues @f$ \lambda_{\mathbf{k}} @f$.
   !> 
@@ -273,7 +261,7 @@ contains
     lambda_matrix(:,:) = 0.0
     do i=1,DIM
       lambda_matrix(i,i) = lambdas(i)
-    enddo
+    end do
     return
   end subroutine gen_lambda_matrix
 
@@ -304,10 +292,10 @@ contains
                 n = k + (l - 1) * Ny
                 A(m, n) = AM(tot)
                 tot = tot + 1
-            enddo
-          enddo
-      enddo
-    enddo
+            end do
+          end do
+      end do
+    end do
     return
   end subroutine MA
 

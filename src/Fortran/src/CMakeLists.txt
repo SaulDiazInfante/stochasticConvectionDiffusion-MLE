@@ -16,6 +16,7 @@ message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 #set(ENABLE_LAPACK95 true)
 # set(MKL_THREADING "tbb_thread")
 set(SRC_FILES
+    mod_data_io.f90
     mod_alloc.f90
     mod_global_parameters_and_shared_data.f90
     mod_par_generators.f90
@@ -40,6 +41,7 @@ target_link_libraries(my_fortran_program ${MKL_LIBRARIES})
 
 # Add dependencies
 add_dependencies(my_fortran_program 
+    mod_data_io
     mod_alloc
     mod_global_parameters_and_shared_data
     mod_par_generators
@@ -48,6 +50,7 @@ add_dependencies(my_fortran_program
     mod_random_number_generator
     mod_sde_solver
 )
+add_library(mod_data_io OBJECT mod_data_io.f90)
 add_library(mod_alloc OBJECT mod_alloc.f90)
 add_library(
     mod_global_parameters_and_shared_data OBJECT mod_global_parameters_and_shared_data.f90

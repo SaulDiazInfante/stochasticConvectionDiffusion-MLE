@@ -1,7 +1,8 @@
-!! ifx -qmkl mod_global_parameters_and_shared_data.f90 mod_par_generators.f90 mod_sde_coefficients.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
+!! ifx -qmkl mod_data_io.f90 mod_alloc.f90 mod_global_parameters_and_shared_data.f90 mod_par_generators.f90 mod_sde_coefficients.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
 program main
   !! This module wraps the main Fortran functionality to be called from C
   use iso_fortran_env, only: int32, real64
+  use mod_data_io
   use mod_global_parameters_and_shared_data
   use mod_par_generators
   use mod_sde_coefficients

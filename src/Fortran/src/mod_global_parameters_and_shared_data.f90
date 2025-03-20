@@ -16,7 +16,7 @@ module mod_global_parameters_and_shared_data
     real(real64), parameter :: L1 = 5.0_real64
     real(real64), parameter :: L2 = 5.0_real64
 !-----------------------------------------    
-    
+    real(real64), allocatable :: times(:)
     real(real64), allocatable :: eigen_values(:), lambdas(:), B_(:)
     real(real64), allocatable :: hs(:), startx(:), Ls(:)
     real(real64), allocatable :: U(:), U_(:), vector_drift(:)
@@ -32,7 +32,6 @@ module mod_global_parameters_and_shared_data
     real(real64), allocatable :: drift_mat(:,:), diffusion_mat(:,:)
                
     real(real64), allocatable :: brownian(:,:)
-    real(real64), allocatable :: times(:)
     real(real64) :: mean_a, std_a, winner_delta
     
 contains

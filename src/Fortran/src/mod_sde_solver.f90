@@ -174,7 +174,7 @@
     real(real64) u_em (DIM)
     u_drift(:) = 0.0_real64
     u_diffusion(:) = 0.0_real64   
-    call eval_drift_at_u(DIM, beta, theta, drift_mat, current_u, u_drift)
+    call eval_drift_at_u(current_u, u_drift)
     call eval_diagonal_diffusion_at_u(&
       &DIM, sigma, vector_diffusion, current_u, u_diffusion&
     ) 

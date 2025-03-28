@@ -19,16 +19,12 @@ module mod_global_parameters_and_shared_data
     real(real64), allocatable :: times(:)
     real(real64), allocatable :: eigen_values(:), lambdas(:), B_(:)
     real(real64), allocatable :: hs(:), startx(:), Ls(:)
-    real(real64), allocatable :: U(:), U_(:), vector_drift(:)
+    real(real64), allocatable :: U(:), U_(:)
     real(real64), allocatable :: AM(:)  ! Ensure AM is declared as allocatable
-    real(real64), allocatable :: vector_diffusion(:)
-    real(real64), allocatable :: vectorial_winner_delta(:)
-    real(real64), allocatable :: initial_vector_winner(:)
-    real(real64), allocatable :: gaussian_sample(:)
     
     real(real64), allocatable :: lambda_matrix(:,:)
     real(real64), allocatable :: path(:,:)
-    real(real64), allocatable :: B(:, :)
+    real(real64), allocatable :: A(:,:), B(:, :)
     real(real64), allocatable :: drift_mat(:,:), diffusion_mat(:,:)
                
     real(real64), allocatable :: brownian(:,:)
@@ -42,16 +38,15 @@ contains
         open(99, file="../MatrixA.dat")
             read(99, *) AM
         close(99)
+        
         call alloc_vector(times, nobs)
         call alloc_vector(eigen_values, DIM)
         call alloc_vector(U, DIM)
         call alloc_vector(U_, DIM)
-        call alloc_vector(vector_drift, DIM)
-        call alloc_vector(vector_diffusion, DIM)
-        call alloc_vector(vectorial_winner_delta, DIM)
-        call alloc_vector(initial_vector_winner, DIM)
+        call alloc_vector(B_, DIM)
         allocate(path(0:nobs, DIM))
 
+        call alloc_array(A, DIM, DIM)
         call alloc_array(B, DIM, DIM)
         call alloc_array(drift_mat, DIM, DIM)
         call alloc_array(diffusion_mat, DIM, DIM)

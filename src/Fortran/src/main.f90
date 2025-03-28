@@ -1,4 +1,4 @@
-!! ifx -qmkl mod_data_io.f90 mod_alloc.f90 mod_global_parameters_and_shared_data.f90 mod_par_generators.f90 mod_sde_coefficients.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
+!! ifx -qmkl mod_alloc.f90 mod_data_io.f90 mod_global_parameters_and_shared_data.f90 mod_par_generators.f90 mod_sde_coefficients.f90 mkl_vsl.f90 mod_random_number_generator.f90 mod_sde_solver.f90 main.f90
 program main
   !! This module wraps the main Fortran functionality to be called from C
   use iso_fortran_env, only: int32, real64
@@ -10,7 +10,10 @@ program main
   use mod_sde_solver
   implicit none
   
-   
+  character(len=20), dimension(2) :: header 
+  character(len=50) :: file_name 
+  real(real64), dimension(DIM, 2) :: indexed_times
+  real(real64), allocatable :: array(:,:), vector_drift(:), vector_diffusion(:)
   print *, "DIM: ", DIM
   print *, "Nx: ", Nx
   print *, "Ny: ", Ny
@@ -34,33 +37,34 @@ program main
   call print_vector_with_indices("eigen values", eigen_values(1:10),10)
   call build_matrix_B(eigen_values, B)
   call print_matrix_with_indices("B", B(1:5, 1:5) ,5 ,5)
-
-  ! call gen_matrix_diag_B(DIM, eigen_values, gamma, B_)
-  ! call print_vector_with_indices("diag(B)", B_(1:5), 5)
+  
+  call gen_matrix_diag_B()
+  call print_vector_with_indices("diag(B)", B_(1:5), 5)
 
   
-  ! call gen_lambda_matrix(DIM, eigen_values, lambda_matrix)
-  ! call print_matrix_with_indices("Lambda", lambda_matrix(1:5, 1:5) ,5 ,5)
+  call gen_lambda_matrix()
+  call print_matrix_with_indices("Lambda", lambda_matrix(1:5, 1:5) ,5 ,5)
 
-  ! call MA(DIM, Nx, Ny, AM, A)
-  ! call print_matrix_with_indices("A", lambda_matrix(1:5, 1:5) ,5 ,5)
+  call assemble_matrix_A()
+  call print_matrix_with_indices("A", A(1:5, 1:5) ,5 ,5)
 
-  ! call gen_drift_matrix(DIM, theta, beta, eigen_values, A, drift_mat)
-  ! call print_matrix_with_indices("Drift matrix", drift_mat(1:5, 1:5) ,5 ,5)
+  call gen_drift_matrix()
+  call print_matrix_with_indices("Drift matrix", drift_mat(1:5, 1:5) ,5 ,5)
 
-  ! call  gen_diffusion_matrix(DIM, 1.0_real64, B, diffusion_mat)
-  ! call print_matrix_with_indices(&
-  !   &"Diffusion matrix", &
-  !   &diffusion_mat(1:5, 1:5) ,&
-  !   &5 ,&
-  !   &5 &
-  ! &)
+  call  gen_diffusion_matrix()
+  call print_matrix_with_indices(&
+     &"Diffusion matrix", &
+     &diffusion_mat(1:5, 1:5) ,&
+     &5 ,&
+     &5 &
+   &)
 
-  ! call eval_whole_drift(DIM, beta, theta, eigen_values, A, U, vector_drift)
-  ! call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
+  U(:)=1.0_real64
+  call eval_whole_drift(U, vector_drift)
+  call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
   
-  ! call eval_drift_at_u(DIM, beta, theta, drift_mat, U, vector_drift)
-  ! call print_vector_with_indices("drift(U)", vector_drift(1:5), 5)
+  call eval_drift_at_u(U, vector_drift)
+  call print_vector_with_indices("drift(U)", vector_drift(1:5), 5)
   
   ! call eval_diffusion_at_u(DIM, sigma, diffusion_mat, U, vector_diffusion)
   ! call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)

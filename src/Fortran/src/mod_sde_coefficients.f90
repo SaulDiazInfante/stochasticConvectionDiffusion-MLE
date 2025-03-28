@@ -4,6 +4,8 @@
 !> the PDE model.
 module mod_sde_coefficients
   use iso_fortran_env, only: int32, real64
+  use mod_alloc
+  use mod_global_parameters_and_shared_data
   implicit none
   
 
@@ -28,20 +30,12 @@ contains
 !> @param[in]  Lambda_diagonal A vector containing the diagonal elements of the Lambda matrix.
 !> @param[in]  A               The interaction matrix of size (DIM, DIM).
 !> @param[out] drift_mat       The resulting drift matrix of size (DIM, DIM).
-subroutine gen_drift_matrix(DIM, theta, beta, Lambda_diagonal, A, drift_mat)
+subroutine gen_drift_matrix()
     implicit none
-    integer(int32), intent(in) ::  DIM
-    real(real64), intent(in) :: theta
-    real(real64), intent(in) :: beta
-    real(real64), intent(in) :: A(DIM, DIM)
-    real(real64), intent(in) :: Lambda_diagonal(DIM)
-    real(real64), intent(out) :: drift_mat(DIM,DIM)
-    
     integer(int32) :: i
-    
     drift_mat(:, :) = theta * A(:, :)
     do i=1, DIM
-      drift_mat(i, i) = drift_mat(i, i) + beta * Lambda_diagonal(i)
+      drift_mat(i, i) = drift_mat(i, i) + beta * eigen_values(i)
     end do
     drift_mat = -1.0_real64 * drift_mat
     return
@@ -54,12 +48,8 @@ subroutine gen_drift_matrix(DIM, theta, beta, Lambda_diagonal, A, drift_mat)
 !>                           diffusion term.
 !> @param[out] diffusion_mat The resulting diffusion matrix of size (DIM, DIM).
 
-  subroutine gen_diffusion_matrix(DIM, sigma, B, diffusion_mat)
+  subroutine gen_diffusion_matrix()
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: sigma
-    real(real64), intent(in) :: B(DIM, DIM)
-    real(real64), intent(out) :: diffusion_mat(DIM, DIM)
     diffusion_mat(:, :) = sigma * B(:, :)
     return
   end subroutine gen_diffusion_matrix
@@ -81,50 +71,26 @@ subroutine gen_drift_matrix(DIM, theta, beta, Lambda_diagonal, A, drift_mat)
 !> decomposition
 !> @param[in]   U             real64(DIM)
 !> @param[out]  vector_drift  @f$ -(\beta \Lambda  + \theta A) U @f$
-  subroutine eval_whole_drift(&
-    & DIM, & 
-    & beta, &
-    & theta, &
-    & Lambda_diagonal, &
-    & A_matrix, &
-    & U, &
-    & vector_drift &
-  & )
+  subroutine eval_whole_drift(vector_U, vector_drift)
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: beta
-    real(real64), intent(in) :: theta
-    real(real64), intent(in) :: Lambda_diagonal(DIM)
-    real(real64), intent(in) :: A_matrix(DIM, DIM)
-    real(real64), intent(in) :: U(DIM) 
-    real(real64), intent(out) :: vector_drift(DIM)
-    
+    real(real64), intent(in) :: vector_U(DIM)
+    real(real64), allocatable, intent(out) :: vector_drift(:)  
     character(1) :: trans
-    real(real64) :: temp_diagonal(DIM)
-    real(real64), allocatable :: temp_matrix(:, :)
-    integer(int32) :: i, j, alloc_stat
-    
-    allocate(temp_matrix(DIM, DIM), stat=alloc_stat)
-    if (alloc_stat /= 0) then
-      print *, "Error: Failed to allocate temp_matrix in eval_whole_drift"
-      vector_drift = 0.0_real64 ! Set a safe default value
-      return
-    end if
+    real(real64), allocatable :: temp_diagonal(:), temp_matrix(:, :)
+    integer(int32) :: i, j
+    call alloc_vector(vector_drift, DIM)
+    call alloc_vector(temp_diagonal, DIM)
+    call alloc_array(temp_matrix, DIM, DIM)
     trans = 'N'  ! No transpose
  
-    temp_diagonal(:) = beta * Lambda_diagonal(:) 
-    temp_matrix(:, :) = theta * A_matrix(:, :)
+    temp_diagonal(:) = beta * eigen_values(:) 
+    temp_matrix(:, :) = theta * A(:, :)
     
     do i = 1, DIM
       temp_matrix(i, i) = temp_matrix(i, i) + temp_diagonal(i)
     end do
-    vector_drift(:) = 0.0_real64
-    vector_drift = vector_drift - MATMUL(temp_matrix, U)
-    
-    deallocate(temp_matrix, stat=alloc_stat)
-    if (alloc_stat /= 0) then
-      print *, "*** WARNING: Failed to deallocate temp_matrix"
-    end if 
+      vector_drift = vector_drift - MATMUL(temp_matrix, vector_U)
+     
   end subroutine eval_whole_drift
 !> @brief 
 !> Given Matrix A, vector Lambda and parameters beta, theta, this   
@@ -142,25 +108,17 @@ subroutine gen_drift_matrix(DIM, theta, beta, Lambda_diagonal, A, drift_mat)
 !! @param[out]  vector_drift  @f$-(\beta \Lambda  + \theta A) U dt @f$
 
 subroutine eval_drift_at_u(&
-    & DIM, & 
-    & beta, &
-    & theta, &
-    & drift_matrix, &
-    & U, &
+    & vector_U, &
     & vector_drift &
   & )
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: beta
-    real(real64), intent(in) :: theta
-    real(real64), intent(in) :: drift_matrix(DIM, DIM)
-    real(real64), intent(in) :: U(DIM) 
+    real(real64), intent(in) :: vector_U(DIM) 
     real(real64), intent(out) :: vector_drift(DIM)
     
     integer(int32) :: i, j
     
     vector_drift(:) = 0.0_real64
-    vector_drift = vector_drift + MATMUL(drift_matrix, U)
+    vector_drift = vector_drift + MATMUL(drift_mat, vector_U)
   end subroutine eval_drift_at_u
 
 !> @brief compute the diffusion coefficient of SDE equation

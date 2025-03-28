@@ -123,6 +123,7 @@ subroutine print_matrix(A, rows, cols)
     end do
 
   end subroutine print_vector
+
   !> @brief Prints a vector with indices.
   !> 
   !> Prints each element of vector `V` with its corresponding index.
@@ -144,5 +145,83 @@ subroutine print_matrix(A, rows, cols)
     end do
     print*,""
   end subroutine print_vector_with_indices
+
+!> @brief Adds a column of row indices (starting from 1) to the input array.
+!! @param[in] input A 2D real(real64) array of shape (n, m)
+!! @param[out] output A 2D real(real64) array of shape (n, m+1) with index in first column
+
+  subroutine add_index_column(input, output)
+
+    use iso_fortran_env, only: real64
+    implicit none
   
+    real(real64), intent(in)  :: input(:,:)
+    real(real64), intent(out) :: output(:,:)
+    integer :: n, m, i
+    n = size(input, 1)
+    m = size(input, 2)
+    do i = 1, n
+      output(i, 1) = real(i, kind=real64)       ! Row index (starting from 1)
+      output(i, 2:m+1) = input(i, :)            ! Copy row from input
+    end do
+  end subroutine add_index_column
+  
+!> @brief Save a 2D real array to a CSV file with a header row.
+!! 
+!! This subroutine writes the contents of a 2D real array to a CSV file, 
+!! including a header line with column names.
+!!
+!! @param[in] filename Name of the CSV output file.
+!! @param[in] array 2D real array of size (rows, cols) to write to file.
+!! @param[in] rows Number of rows in the array.
+!! @param[in] cols Number of columns in the array.
+!! @param[in] header Array of column names (length must equal cols).
+!!
+!! @note Each value is written with 4 decimal places (F10.4 format).
+!! @warning Header size must match the number of columns.
+  
+  subroutine save_array_to_csv_with_header(filename, array, rows, cols, header)
+    implicit none
+  
+    character(len=*), intent(in) :: filename
+    real(real64), intent(in) :: array(:,:)
+    integer(int32), intent(in) :: rows, cols
+    character(len=*), dimension(:), intent(in) :: header
+    integer :: i, j
+    integer :: unit
+  
+    ! Open a unit number and the file for writing
+    open(newunit=unit, file=filename, status='replace', action='write')
+  
+    ! Write the header
+    do j = 1, cols
+      write(unit, '(A)', advance='no') trim(header(j))
+      if (j < cols) then
+        write(unit, '(A)', advance='no') ','
+      else
+        write(unit, *) ''
+      end if
+    end do
+  
+    ! Write the data
+    do i = 1, rows
+      do j = 1, cols
+        if(j < 2) then
+          write(unit, '(I6)', advance='no') int(array(i, j), kind=Int32)
+        else
+          write(unit, '(F12.8)', advance='no') array(i, j)
+        end if
+        
+        if (j < cols) then
+          write(unit, '(A)', advance='no') ','
+        else
+          write(unit, *) ''
+        end if
+      end do
+    end do
+  
+    close(unit)
+  end subroutine save_array_to_csv_with_header
+  
+
 end module mod_data_io

@@ -108,18 +108,13 @@ contains
   !> @param[in]  lambdas  Array of eigenvalues.
   !> @param[in]  gamma    Power exponent.
   !> @param[out] B        The computed diagonal matrix.
-  pure subroutine gen_matrix_diag_B(DIM, lambdas, gamma, B)
+  subroutine gen_matrix_diag_B()
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: gamma
-    real(real64), intent(in) :: lambdas(DIM)
-    real(real64), intent(out) :: B(DIM)
     integer(int32) i
 
-    B(:) = 0.0
-    
+    B_(:) = 0.0
     do i=1, DIM
-      B(i) = lambdas(i) ** (-gamma)
+      B_(i) = eigen_values(i) ** (-gamma)
     end do
     return
   end subroutine gen_matrix_diag_B
@@ -131,16 +126,13 @@ contains
   !> @param[in]  DIM          Number of elements.
   !> @param[in]  lambdas      Eigenvalue vector.
   !> @param[out] lambda_matrix Resulting diagonal matrix.
-  pure subroutine gen_lambda_matrix(DIM, lambdas, lambda_matrix)
+  subroutine gen_lambda_matrix()
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: lambdas(DIM)
-    real(real64), intent(out) :: lambda_matrix(DIM, DIM)
+  
     integer(int32) i
 
-    lambda_matrix(:,:) = 0.0
     do i=1,DIM
-      lambda_matrix(i,i) = lambdas(i)
+      lambda_matrix(i, i) = eigen_values(i) 
     end do
     return
   end subroutine gen_lambda_matrix
@@ -155,14 +147,12 @@ contains
   !> @param[in]  Ny   Number of eigen base vectors in y-direction.
   !> @param[in]  AM   Flattened matrix data.
   !> @param[out] A    Reshaped 2D matrix.
-  pure subroutine MA(DIM, Nx, Ny, AM, A)
+  
+  subroutine assemble_matrix_A()
     implicit none
-    integer(int32), intent(in) :: DIM, Nx, Ny
-    real(real64), intent(in) :: AM(DIM * DIM)
-    real(real64), intent(out) :: A(DIM, DIM)
 
-    integer(int32) :: i, j, k, l, m, n, tot
-    tot=1
+    integer(int32) :: i, j, k, l, m, n, idx
+    idx=1
 
     do i = 1, Nx
       do j = 1, Ny
@@ -170,13 +160,13 @@ contains
           do k = 1, Nx
             do l = 1, Ny
                 n = k + (l - 1) * Ny
-                A(m, n) = AM(tot)
-                tot = tot + 1
+                A(m, n) = AM(idx)
+                idx = idx + 1
             end do
           end do
       end do
     end do
     return
-  end subroutine MA
+  end subroutine assemble_matrix_A
 
 end module mod_par_generators

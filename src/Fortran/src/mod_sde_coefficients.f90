@@ -10,7 +10,7 @@ module mod_sde_coefficients
   
 
   ! Include the MKL module
-  include 'mkl_blas.fi'
+  !include 'mkl_blas.fi'
 contains
 
 !> @brief Generates the drift matrix for a stochastic differential equation.
@@ -113,11 +113,11 @@ subroutine eval_drift_at_u(&
   & )
     implicit none
     real(real64), intent(in) :: vector_U(DIM) 
-    real(real64), intent(out) :: vector_drift(DIM)
+    real(real64), allocatable, intent(out) :: vector_drift(:)
     
     integer(int32) :: i, j
     
-    vector_drift(:) = 0.0_real64
+    call alloc_vector(vector_drift, DIM)
     vector_drift = vector_drift + MATMUL(drift_mat, vector_U)
   end subroutine eval_drift_at_u
 
@@ -130,17 +130,13 @@ subroutine eval_drift_at_u(&
 !! @param[in]   U                 real64(DIM)
 !! @param[out]  vector_diffusion  real64(DIM  \f $\sigma B U \f$. 
 
-  subroutine eval_diffusion_at_u(DIM, sigma, diffusion_matrix, U, vector_diffusion)
+  subroutine eval_diffusion_at_u(vector_U, vector_diffusion)
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: sigma
-    real(real64), intent(in) :: diffusion_matrix(DIM, DIM)
-    real(real64), intent(in) :: U(DIM) 
-    real(real64), intent(out) :: vector_diffusion(DIM)
-
-    integer(int32) :: i, j
-    vector_diffusion(:) = 0.0_real64
-    vector_diffusion = vector_diffusion + MATMUL(diffusion_matrix, U)
+    real(real64), intent(in) :: vector_U(DIM)
+    real(real64), allocatable, intent(out) :: vector_diffusion(:)
+    call alloc_vector(vector_diffusion, DIM)
+    
+    vector_diffusion = vector_diffusion + MATMUL(diffusion_mat, vector_U)
   end subroutine eval_diffusion_at_u
 
 
@@ -153,16 +149,12 @@ subroutine eval_drift_at_u(&
 !! @param[in]   U                 real64(DIM)
 !! @param[out]  vector_diffusion  real64(DIM  \f $\sigma B U \f$. 
 
-  subroutine eval_diagonal_diffusion_at_u(DIM, sigma, diffusion_diagonal, U, vector_diffusion)
+  subroutine eval_diagonal_diffusion_at_u(vector_U, vector_diffusion)
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: sigma
-    real(real64), intent(in) :: diffusion_diagonal(DIM)
-    real(real64), intent(in) :: U(DIM) 
-    real(real64), intent(out) :: vector_diffusion(DIM)
-
-    vector_diffusion(:) = 0.0_real64
-    vector_diffusion =   diffusion_diagonal(:) * U(:)
+    real(real64), intent(in) :: vector_U(DIM) 
+    real(real64), allocatable,intent(out) :: vector_diffusion(:)
+    call alloc_vector(vector_diffusion, DIM)
+    vector_diffusion =   sigma * B_(:) * U(:)
   end subroutine eval_diagonal_diffusion_at_u
 end module mod_sde_coefficients
 

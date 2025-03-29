@@ -11,5 +11,9 @@
         "mathcal",
         "newunit"
     ],
-    "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran"
+    "cmake.sourceDirectory": "/home/saul/Desktop/stochasticConvectionDiffusion-MLE/src/Fortran",
+    "cmake.generator": "Unix Makefiles",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.configureOnOpen": true,
+    "cmake.sourceDirectory": "${workspaceFolder}"
 }

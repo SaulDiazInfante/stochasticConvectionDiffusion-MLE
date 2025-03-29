@@ -7,6 +7,7 @@ program main
   use mod_par_generators
   use mod_sde_coefficients
   use mod_random_number_generator
+  use mod_setup_and_logs
   use mod_sde_solver
   implicit none
   
@@ -28,37 +29,9 @@ program main
   print *, "L1: ", L1
   print *, "L2: ", L2 
 
-  call allocate_dynamic_memory()
-
-
-  call gen_observation_times()
-  call print_vector_with_indices("times", times(1:10), 10)
-  call gen_eigen_values()
-  call print_vector_with_indices("eigen values", eigen_values(1:10),10)
-  call build_matrix_B(eigen_values, B)
-  call print_matrix_with_indices("B", B(1:5, 1:5) ,5 ,5)
+  call build_sde()
+  call display_domain_problem_arrays()
   
-  call gen_matrix_diag_B()
-  call print_vector_with_indices("diag(B)", B_(1:5), 5)
-
-  
-  call gen_lambda_matrix()
-  call print_matrix_with_indices("Lambda", lambda_matrix(1:5, 1:5) ,5 ,5)
-
-  call assemble_matrix_A()
-  call print_matrix_with_indices("A", A(1:5, 1:5) ,5 ,5)
-
-  call gen_drift_matrix()
-  call print_matrix_with_indices("Drift matrix", drift_mat(1:5, 1:5) ,5 ,5)
-
-  call  gen_diffusion_matrix()
-  call print_matrix_with_indices(&
-     &"Diffusion matrix", &
-     &diffusion_mat(1:5, 1:5) ,&
-     &5 ,&
-     &5 &
-   &)
-
   U(:)=1.0_real64
   call eval_whole_drift(U, vector_drift)
   call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
@@ -66,10 +39,13 @@ program main
   call eval_drift_at_u(U, vector_drift)
   call print_vector_with_indices("drift(U)", vector_drift(1:5), 5)
   
-  ! call eval_diffusion_at_u(DIM, sigma, diffusion_mat, U, vector_diffusion)
-  ! call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)
-  ! call eval_diagonal_diffusion_at_u(DIM, sigma, B_, U, vector_diffusion)
-  ! call print_vector_with_indices("diffusion(U) from diag(B)", vector_diffusion(1:5), 5)
+  call eval_diffusion_at_u(U, vector_diffusion)
+  call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)
+  call eval_diagonal_diffusion_at_u(U, vector_diffusion)
+  call print_vector_with_indices(&
+    &"diffusion(U) from diag(B)", &
+    & vector_diffusion(1:5), 5 &
+  &)
   
   ! mean_a = 0.0
   ! std_a = 1.0

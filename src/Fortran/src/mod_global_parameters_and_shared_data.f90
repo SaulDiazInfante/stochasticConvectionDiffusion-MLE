@@ -35,7 +35,7 @@ contains
     subroutine allocate_dynamic_memory()
         ! Load matrix A entries
         allocate(AM(DIM * DIM))  ! Dynamically allocate memory for AM
-        open(99, file="../MatrixA.dat")
+        open(99, file="../data/MatrixA.dat")
             read(99, *) AM
         close(99)
         

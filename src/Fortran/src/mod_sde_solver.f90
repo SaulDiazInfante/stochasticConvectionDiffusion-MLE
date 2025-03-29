@@ -146,43 +146,32 @@
   !> (`sigma`) coefficients, and the Brownian motion increments (`brown`).
 
   subroutine milstein_step(&
-    &DIM , &
-    &delta, &
-    &beta, &
-    &theta, &
-    &drift_mat, &
-    &sigma, &
-    &vector_diffusion, &
     &current_u, &
     &brownian_increment, &
     &next_u &
   &)
     implicit none
-    integer(int32), intent(in) :: DIM
-    real(real64), intent(in) :: delta
-    real(real64), intent(in) :: beta
-    real(real64), intent(in) :: theta
-    real(real64), intent(in) :: drift_mat(DIM, DIM)
-    real(real64), intent(in) :: sigma
-    real(real64), intent(in) :: vector_diffusion(DIM)
     real(real64), intent(in) :: current_u(DIM)
     real(real64), intent(in) :: brownian_increment(DIM)
-    real(real64), intent(out) :: next_u(DIM)
+    real(real64), allocatable, intent(out) :: next_u(:)
     
-    real(real64) u_drift (DIM)
-    real(real64) u_diffusion (DIM)
-    real(real64) u_em (DIM)
-    u_drift(:) = 0.0_real64
-    u_diffusion(:) = 0.0_real64   
+    real(real64), allocatable :: u_drift (:), u_diffusion(:)
+    real(real64), allocatable :: u_euler_maruyama(:)
+  
+    call alloc_vector(u_drift, DIM)
+    call alloc_vector(u_diffusion, DIM)
+    call alloc_vector(u_euler_maruyama, DIM)
+    call alloc_vector(next_u, DIM)
+    !call alloc_vector(u_milstein, DIM)
+    
+
     call eval_drift_at_u(current_u, u_drift)
-    call eval_diagonal_diffusion_at_u(&
-      &DIM, sigma, vector_diffusion, current_u, u_diffusion&
-    ) 
-    u_em(:) = 0.0_real64
-    u_em(:) = current_u(:) &
+    call eval_diagonal_diffusion_at_u(current_u, u_diffusion) 
+
+    u_euler_maruyama(:) = current_u(:) &
       & + u_drift(:) * delta &
-      & + vector_diffusion(:) * brownian_increment(:)
-    next_u(:) = u_em(:)
+      & + u_diffusion(:) * brownian_increment(:)
+    next_u(:) = u_euler_maruyama(:)
     return
   end subroutine milstein_step
 end module mod_sde_solver

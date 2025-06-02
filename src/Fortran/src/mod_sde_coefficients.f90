@@ -33,11 +33,11 @@ contains
 subroutine gen_drift_matrix()
     implicit none
     integer(int32) :: i
-    drift_mat(:, :) = theta * A(:, :)
+    driftmat(:, :) = theta * a(:, :)
     do i=1, DIM
-      drift_mat(i, i) = drift_mat(i, i) + beta * eigen_values(i)
+      driftmat(i, i) = driftmat(i, i) + beta * lambdas(i)
     end do
-    drift_mat = -1.0_real64 * drift_mat
+    driftmat = -1.0_real64 * driftmat
     return
   end subroutine gen_drift_matrix
 
@@ -50,7 +50,7 @@ subroutine gen_drift_matrix()
 
   subroutine gen_diffusion_matrix()
     implicit none
-    diffusion_mat(:, :) = sigma * B(:, :)
+    diffusionmat(:, :) = sigma * bmat(:, :)
     return
   end subroutine gen_diffusion_matrix
 
@@ -83,8 +83,8 @@ subroutine gen_drift_matrix()
     call alloc_array(temp_matrix, DIM, DIM)
     trans = 'N'  ! No transpose
  
-    temp_diagonal(:) = beta * eigen_values(:) 
-    temp_matrix(:, :) = theta * A(:, :)
+    temp_diagonal(:) = beta * lambdas(:) 
+    temp_matrix(:, :) = theta * a(:, :)
     
     do i = 1, DIM
       temp_matrix(i, i) = temp_matrix(i, i) + temp_diagonal(i)
@@ -118,7 +118,7 @@ subroutine eval_drift_at_u(&
     integer(int32) :: i, j
     
     call alloc_vector(vector_drift, DIM)
-    vector_drift = vector_drift + MATMUL(drift_mat, vector_U)
+    vector_drift = vector_drift + MATMUL(driftmat, vector_U)
   end subroutine eval_drift_at_u
 
 !> @brief compute the diffusion coefficient of SDE equation
@@ -136,7 +136,7 @@ subroutine eval_drift_at_u(&
     real(real64), allocatable, intent(out) :: vector_diffusion(:)
     call alloc_vector(vector_diffusion, DIM)
     
-    vector_diffusion = vector_diffusion + MATMUL(diffusion_mat, vector_U)
+    vector_diffusion = vector_diffusion + MATMUL(diffusionmat, vector_U)
   end subroutine eval_diffusion_at_u
 
 
@@ -154,7 +154,7 @@ subroutine eval_drift_at_u(&
     real(real64), intent(in) :: vector_U(DIM) 
     real(real64), allocatable,intent(out) :: vector_diffusion(:)
     call alloc_vector(vector_diffusion, DIM)
-    vector_diffusion =   sigma * B_(:) * U(:)
+    vector_diffusion = sigma * b(:) * u(:)
   end subroutine eval_diagonal_diffusion_at_u
 end module mod_sde_coefficients
 

@@ -1,3 +1,11 @@
+# CMake build artifacts
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/Makefile
+/cmake_install.cmake
+/modules/
+
 # Prerequisites
 *.d
 
@@ -31,6 +39,17 @@
 *.out
 *.app
 
+# Generated binaries
+*.o
+*.mod
+
+
 build/
 doc/
 src/Fortran/docs
+# Editor/OS files
+*.swp
+*.swo
+.DS_Store
+.vscode/
+.idea/

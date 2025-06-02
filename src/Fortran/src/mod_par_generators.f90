@@ -45,31 +45,35 @@ contains
   !> @param[in]  Ny   Number of eigen basic vectors in the y-direction.
   !> @param[in]  L1   Length in the x-direction.
   !> @param[in]  L2   Length in the y-direction.
-  !> @param[out] eigen_values Computed eigenvalues.
+  !> @param[out] eigen_values_ Computed eigenvalues.
   subroutine gen_eigen_values()
     implicit none
     real(real64) pi_square, L1_res, L2_res, lambda_ij
-    integer(int32) i, j, k, m, l, n
+    integer(int32) i, j, m
+    real(real64), allocatable :: eigen_values_(:)
 
     pi_square = PI ** 2
     L1_res = (L1) ** (-1)
     L2_res = (L2) ** (-1)
 
-    k=0
+    ! Allocate the eigen_values_ array with the same size as lambdas
+    allocate(eigen_values_(DIM))
+    eigen_values_ = 0.0_real64
+    
     do i=1, Nx
       do j=1, Ny
         m = i + (j - 1) * Ny
-        do k=1, Nx
-          do l=1, Ny
-            n  = k + (l - 1) * Ny
-            if (m == n) then
-              lambda_ij = pi_square * ((i/L1)**2 + (j/L2)**2)
-              eigen_values(m) = lambda_ij
-            endif
-          end do
-        end do
+        lambda_ij = pi_square * ((i * L1_res)**2 + (j * L2_res)**2)
+        eigen_values_(m) = lambda_ij
       end do
     end do
+    
+    ! Store the eigenvalues in the global lambdas array
+    lambdas = eigen_values_
+    
+    ! Deallocate the temporary array
+    deallocate(eigen_values_)
+    
     return
   end subroutine gen_eigen_values
 
@@ -84,17 +88,7 @@ contains
   !> @param[in]  DIM      Dimension of the matrix.
   !> @param[in]  lambdas  Array of eigenvalues.
   !> @param[in]  gamma    Power exponent.
-  !> @param[out] B        The computed diagonal matrix.
-  subroutine build_matrix_B(eigen_values, matrix_B)
-    implicit none
-    real(real64), intent(in) :: eigen_values(DIM)
-    real(real64), intent(inout) :: matrix_B(DIM, DIM)
-    integer(int32) i
-    do i=1, DIM
-      matrix_B(i, i) = eigen_values(i) ** (-gamma)
-    end do
-    return
-  end subroutine build_matrix_B
+  !> @param[out] b_mat_    The computed diagonal matrix.
 
   !> @brief Generates the elements of the diagonal matrix @f$ B @f$ based on eigenvalues @f$ \lambda_{\mathbf{k}} @f$.
   !> 
@@ -112,9 +106,9 @@ contains
     implicit none
     integer(int32) i
 
-    B_(:) = 0.0
+    b(:) = 0.0_real64
     do i=1, DIM
-      B_(i) = eigen_values(i) ** (-gamma)
+      b(i) = lambdas(i) ** (-gamma)
     end do
     return
   end subroutine gen_matrix_diag_B
@@ -132,7 +126,7 @@ contains
     integer(int32) i
 
     do i=1,DIM
-      lambda_matrix(i, i) = eigen_values(i) 
+      lambdamatrix(i, i) = lambdas(i) 
     end do
     return
   end subroutine gen_lambda_matrix
@@ -146,7 +140,7 @@ contains
   !> @param[in]  Nx   Number of eigen base vectors in x-direction.
   !> @param[in]  Ny   Number of eigen base vectors in y-direction.
   !> @param[in]  AM   Flattened matrix data.
-  !> @param[out] A    Reshaped 2D matrix.
+  !> @param[out] a    Reshaped 2D matrix.
   
   subroutine assemble_matrix_A()
     implicit none
@@ -160,7 +154,7 @@ contains
           do k = 1, Nx
             do l = 1, Ny
                 n = k + (l - 1) * Ny
-                A(m, n) = AM(idx)
+                a(m, n) = AM(idx)
                 idx = idx + 1
             end do
           end do

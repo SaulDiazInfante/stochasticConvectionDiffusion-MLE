@@ -15,6 +15,7 @@ program main
   character(len=50) :: file_name 
   real(real64), dimension(DIM, 2) :: indexed_times
   real(real64), allocatable :: array(:,:), vector_drift(:), vector_diffusion(:)
+  real(real64), allocatable :: vectorial_winner_delta(:), initial_vector_winner(:)
   print *, "DIM: ", DIM
   print *, "Nx: ", Nx
   print *, "Ny: ", Ny
@@ -32,16 +33,20 @@ program main
   call build_sde()
   call display_domain_problem_arrays()
   
-  U(:)=1.0_real64
-  call eval_whole_drift(U, vector_drift)
-  call print_vector_with_indices("drift(par, U)", vector_drift(1:5), 5)
+  ! Allocate arrays for calculations
+  allocate(vector_drift(DIM))
+  allocate(vector_diffusion(DIM))
   
-  call eval_drift_at_u(U, vector_drift)
-  call print_vector_with_indices("drift(U)", vector_drift(1:5), 5)
+  u(:) = 1.0_real64
+  call eval_whole_drift(u, vector_drift)
+  call print_vector_with_indices("drift(par, u)", vector_drift(1:5), 5)
   
-  call eval_diffusion_at_u(U, vector_diffusion)
-  call print_vector_with_indices("diffusion(U)", vector_diffusion(1:5), 5)
-  call eval_diagonal_diffusion_at_u(U, vector_diffusion)
+  call eval_drift_at_u(u, vector_drift)
+  call print_vector_with_indices("drift(u)", vector_drift(1:5), 5)
+  
+  call eval_diffusion_at_u(u, vector_diffusion)
+  call print_vector_with_indices("diffusion(u)", vector_diffusion(1:5), 5)
+  call eval_diagonal_diffusion_at_u(u, vector_diffusion)
   call print_vector_with_indices(&
     &"diffusion(U) from diag(B)", &
     & vector_diffusion(1:5), 5 &
@@ -75,12 +80,15 @@ program main
   !   &delta, &
   !   &beta, &
   !   &theta, &
-  !   &drift_mat, &
+  !   &driftmat, &
   !   &sigma, &
   !   &vector_diffusion, &
-  !   &U, &
+  !   &u, &
   !   &vectorial_winner_delta, &
-  !   &U_ &  
+  !   &u &  
   ! &)
-  ! call print_vector_with_indices("U_milstein", U_(1:DIM), DIM)
+  ! call print_vector_with_indices("U_milstein", u(1:DIM), DIM)
+  ! Deallocate the arrays we allocated
+  deallocate(vector_drift)
+  deallocate(vector_diffusion)
 end program main

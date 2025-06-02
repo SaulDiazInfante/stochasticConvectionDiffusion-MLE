@@ -174,4 +174,63 @@
     next_u(:) = u_euler_maruyama(:)
     return
   end subroutine milstein_step
+
+  !> @brief Solves a stochastic differential equation using the Milstein scheme.
+  !>
+  !> This subroutine implements the numerical solution of a stochastic differential
+  !> equation using the Milstein scheme. It initializes the necessary variables,
+  !> advances the solution step-by-step, and returns a status code indicating
+  !> success or failure.
+  !>
+  !> @param[out] status Status code: 0 for success, non-zero for failure.
+  !>
+  !> The subroutine uses the `milstein_step` subroutine to advance the solution
+  !> over time, starting from an initial condition and progressing to a final time.
+  subroutine solve_sde(status)
+    implicit none
+    integer, intent(out) :: status
+    
+    ! Local variables
+    real(real64), allocatable :: u_current(:), u_next(:), brownian_inc(:)
+    integer :: i, n_steps
+    
+    ! Initialize status to success
+    status = 0
+    
+    ! Initialize parameters
+    n_steps = 100 ! Number of time steps, adjust as needed
+    
+    ! Allocate arrays
+    call alloc_vector(u_current, DIM)
+    call alloc_vector(brownian_inc, DIM)
+    
+    ! Set initial condition using global u vector
+    u_current(:) = u(:)
+    
+    ! Time stepping loop
+    do i = 1, n_steps
+      ! Generate Brownian increment
+      call vectorial_winner_increment(delta, DIM, 1, u_current, brownian_inc)
+      
+      ! Advance solution using Milstein scheme
+      call milstein_step(u_current, brownian_inc, u_next)
+      
+      ! Update current solution
+      u_current(:) = u_next(:)
+      
+      ! Deallocate u_next as it's reallocated in milstein_step
+      if (allocated(u_next)) deallocate(u_next)
+    end do
+    
+    ! Clean up
+    ! Store the final state in the global u vector
+    u(:) = u_current(:)
+    
+    ! Clean up
+    if (allocated(u_current)) deallocate(u_current)
+    if (allocated(brownian_inc)) deallocate(brownian_inc)
+    if (allocated(u_next)) deallocate(u_next)
+    
+    return
+  end subroutine solve_sde
 end module mod_sde_solver

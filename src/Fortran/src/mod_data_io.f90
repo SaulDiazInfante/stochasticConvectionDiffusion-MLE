@@ -223,5 +223,29 @@ subroutine print_matrix(A, rows, cols)
     close(unit)
   end subroutine save_array_to_csv_with_header
   
+  !> @brief Writes a vector to a file.
+  !> 
+  !> This subroutine writes a vector to a specified file.
+  !> Each element is written in a new line.
+  !>
+  !> @param[in]  filename Name of the file to save the vector.
+  !> @param[in]  vector   The vector to write.
+  subroutine write_data(filename, vector)
+    implicit none
+    character(len=*), intent(in) :: filename
+    real(real64), intent(in) :: vector(:)
+    integer :: i, unit_number
+    
+    ! Open a file for writing
+    open(newunit=unit_number, file=filename, status='replace')
+    
+    ! Write each element of the vector on a separate line
+    do i = 1, size(vector)
+        write(unit_number, '(F12.6)') vector(i)
+    end do
+    
+    ! Close the file
+    close(unit_number)
+  end subroutine write_data
 
 end module mod_data_io

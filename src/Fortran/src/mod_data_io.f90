@@ -141,7 +141,7 @@ subroutine print_matrix(A, rows, cols)
     print *, "  Index    Value"
     print *, "----------------"
     do i = 1, N
-        print '(I6, F10.4)', i, V(i)  ! Print index and value
+        print '(I6, A1, ES15.7E2)', i, char(9), V(i)  ! Print index and value
     end do
     print*,""
   end subroutine print_vector_with_indices

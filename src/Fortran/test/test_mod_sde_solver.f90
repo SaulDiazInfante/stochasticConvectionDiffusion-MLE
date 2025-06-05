@@ -22,17 +22,8 @@ program test_mod_sde_solver
         b(i) = 0.1_real64
     end do
     
-    ! Initialize matrices A and B with test values
-    do i = 1, DIM
-        a(i, i) = 1.0_real64
-        bmat(i, i) = 0.5_real64
-    end do
-    
-    ! Generate drift and diffusion matrices
     call gen_drift_matrix()
     call gen_diffusion_matrix()
-    
-    ! Call the SDE solver with the correct name
     call solve_sde(status)
     
     if (status == 0) then
@@ -41,8 +32,4 @@ program test_mod_sde_solver
         print *, "FAIL: solve_sde returned nonzero status"
         stop 1
     end if
-    
-    ! Clean up (deallocate memory if needed)
-    ! Note: In a real application, you might need more cleanup
-    
 end program test_mod_sde_solver

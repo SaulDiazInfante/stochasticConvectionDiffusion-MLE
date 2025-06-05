@@ -32,7 +32,6 @@ module mod_setup_and_logs
 
   !!> @note This subroutine is called from the main function to set up the SDE solver.  
   subroutine build_sde()
-  
     call allocate_dynamic_memory()
     call gen_observation_times()
     call gen_eigen_values()
@@ -41,13 +40,10 @@ module mod_setup_and_logs
     call assemble_matrix_A()
     call gen_drift_matrix()
     call gen_diffusion_matrix()
-
   end subroutine  build_sde
 
 ! TODO: code a routine to display constants parameters
   !!> @brief Displays the domain problem arrays.
-
-
   subroutine display_domain_problem_arrays()
     call print_vector_with_indices("times", times(1:10), 10)
     call print_vector_with_indices("eigen values", lambdas(1:10), 10)
@@ -63,5 +59,6 @@ module mod_setup_and_logs
       &5, &
       &5 &
     &)
+    call print_vector_with_indices("u_zero", u_zero(1:10), 10)
   end subroutine display_domain_problem_arrays
 end module

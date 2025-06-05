@@ -5,17 +5,18 @@ module mod_global_parameters_and_shared_data
     
     ! Make all entities public by default
     public
-    integer(int32), parameter :: Nx = 10
-    integer(int32), parameter :: Ny = 10
+    integer(int32), parameter :: Nx = 50
+    integer(int32), parameter :: Ny = 50
     integer(int32), parameter :: DIM = Nx * Ny
     integer(int32), parameter :: SEED = 765431
     integer(int32), parameter :: nobs = 1000
+    integer(int32), parameter :: NUM_GAUSSIAN_SUB_STEPS = 10
     real(real64), parameter :: PI = 2.D0 * DASIN(1.D0)
-    real(real64), parameter :: theta = 0.5_real64
-    real(real64), parameter :: beta = 0.5_real64
+    real(real64), parameter :: theta = 1.0_real64
+    real(real64), parameter :: beta = 0.1_real64
     real(real64), parameter :: gamma = 1.0_real64
     real(real64), parameter :: sigma = 0.2_real64
-    real(real64), parameter :: delta = 0.0001_real64
+    real(real64), parameter :: delta = 0.00001_real64
     real(real64), parameter :: L1 = 5.0_real64
     real(real64), parameter :: L2 = 5.0_real64
 !-----------------------------------------    
@@ -25,7 +26,7 @@ module mod_global_parameters_and_shared_data
     real(real64), allocatable :: lambdas(:)
     real(real64), allocatable :: b(:)      ! Vector of coefficients (no underscore for compiler compatibility)
     real(real64), allocatable :: hs(:)
-    real(real64), allocatable :: startx(:)
+    real(real64), allocatable :: u_zero(:)
     real(real64), allocatable :: Ls(:)
     real(real64), allocatable :: u(:)
     real(real64), allocatable :: AM(:)      ! Flattened matrix for file I/O
@@ -38,6 +39,7 @@ module mod_global_parameters_and_shared_data
     real(real64), allocatable :: driftmat(:,:)
     real(real64), allocatable :: diffusionmat(:,:)
     real(real64), allocatable :: brownian(:,:)
+    real(real64), allocatable :: gaussian_samples(:,:)
                
     real(real64) :: mean_a, std_a, winner_delta
     
@@ -66,8 +68,11 @@ contains
         allocate(hs(DIM))
         hs = 0.0_real64
         
-        allocate(startx(DIM))
-        startx = 0.0_real64
+        allocate(u_zero(DIM))
+        u_zero = 0.0_real64
+        open(99, file="../data/u0_proj_row.dat")
+            read(99, *) u_zero
+        close(99)
         
         allocate(Ls(DIM))
         Ls = 0.0_real64
@@ -100,5 +105,7 @@ contains
         allocate(brownian(nobs, DIM))
         brownian = 0.0_real64
         
+        allocate(gaussian_samples(nobs * NUM_GAUSSIAN_SUB_STEPS, DIM))
+        gaussian_samples = 0.0_real64
     end subroutine allocate_dynamic_memory
 end module mod_global_parameters_and_shared_data

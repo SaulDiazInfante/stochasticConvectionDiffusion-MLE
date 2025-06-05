@@ -9,8 +9,12 @@ set(CMAKE_Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules")
 set(ENV{MKLROOT} "/opt/intel/oneapi/mkl/latest")
 message(STATUS "MKLROOT = $ENV{MKLROOT}")
 
-# Compiler flag for automatic MKL linking and preprocessing
-set(CMAKE_Fortran_FLAGS "-qmkl -fpp")
+# Enable Debug build type
+set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+
+# Compiler flags for debug mode
+# -g: debugging info, -O0: no optimization, -fpp: preprocess, -qmkl: link MKL
+set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -fpp -qmkl")
 
 # Source directory
 set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -43,6 +47,7 @@ target_include_directories(mod_data_io PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY}
 
 target_include_directories(mkl_vsl PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY} $ENV{MKLROOT}/include)
 
+target_link_libraries(mod_random_number_generator PRIVATE mkl_vsl)
 target_include_directories(mod_random_number_generator PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
 target_link_libraries(mod_sde_solver PRIVATE 
@@ -70,9 +75,9 @@ set(MY_LIBS
 )
 
 # Add main program
-add_executable(my_fortran_program ${SRC_DIR}/main.f90)
-target_link_libraries(my_fortran_program PRIVATE ${MY_LIBS})
-target_include_directories(my_fortran_program PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY} $ENV{MKLROOT}/include)
+add_executable(simulate_sde_path ${SRC_DIR}/main.f90)
+target_link_libraries(simulate_sde_path PRIVATE ${MY_LIBS})
+target_include_directories(simulate_sde_path PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY} $ENV{MKLROOT}/include)
 
 # Enable testing infrastructure
 enable_testing()
@@ -100,8 +105,11 @@ target_link_libraries(test_mod_sde_solver PRIVATE
         mod_sde_solver
         #mod_data_io
 )
-
-
-
 target_include_directories(test_mod_sde_solver PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 add_test(NAME TestModSDESolver COMMAND test_mod_sde_solver)
+
+# Add test program for mod_random_number_generator
+add_executable(test_mod_random_number_generator ${TEST_DIR}/test_mod_random_number_generator.f90)
+target_link_libraries(test_mod_random_number_generator PRIVATE mod_random_number_generator mkl_vsl)
+target_include_directories(test_mod_random_number_generator PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
+add_test(NAME TestModRandomNumberGenerator COMMAND test_mod_random_number_generator)

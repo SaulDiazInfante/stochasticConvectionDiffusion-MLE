@@ -7,8 +7,6 @@ module mod_sde_coefficients
   use mod_alloc
   use mod_global_parameters_and_shared_data
   implicit none
-  
-
   ! Include the MKL module
   !include 'mkl_blas.fi'
 contains

@@ -9,7 +9,7 @@
 module mod_random_number_generator
     use mkl_vsl_type
     use mkl_vsl
-    use iso_fortran_env, only : int32, real32
+    use iso_fortran_env, only : int32, real64
     implicit none
 contains
 
@@ -24,15 +24,15 @@ contains
         &debug&
     &)
         integer, intent(in) :: buffer_size
-        real(kind=8), intent(in) :: mean_a, std_a 
-        real(kind=8), intent(out), allocatable :: gaussian_sample(:)
+        real(real64), intent(in) :: mean_a, std_a 
+        real(real64), intent(out), allocatable :: gaussian_sample(:)
         integer, intent(in), optional :: user_seed
         logical, intent(in), optional :: debug
         TYPE (VSL_STREAM_STATE) :: stream
         
-        integer(kind=4) errcode
-        integer(kind=4) i, j
-        real (kind=8) :: rand
+        integer(int32) errcode
+        integer(int32) i, j
+        real (real64) :: rand
         integer brng, seed, method, n
         integer, allocatable :: new (:), old(:)
         integer, parameter :: lower = 1, upper = 100
@@ -43,7 +43,10 @@ contains
             call random_number(rand)
             seed = lower + int(rand * (upper - lower + 1))
         end if
-        gaussian_sample = [(0.0, i=1, buffer_size)]
+        
+        ! Allocate the output array
+        allocate(gaussian_sample(buffer_size))
+        gaussian_sample = 0.0_real64
     !       ***** Initializing *****
         brng = VSL_BRNG_MT19937 !! Mersenne Twister
         method = VSL_RNG_METHOD_GAUSSIAN_BOXMULLER2 !! For Gaussian distribution
@@ -71,15 +74,15 @@ contains
         &debug&
     &)
         integer(int32), intent(in) :: n_row, n_col
-        real(kind=8), intent(in) :: mean_a, std_a 
-        real(kind=8), intent(out), dimension(:,:), allocatable :: gaussian_sample
+        real(real64), intent(in) :: mean_a, std_a 
+        real(real64), intent(out), dimension(:,:), allocatable :: gaussian_sample
         integer, intent(in), optional :: user_seed
         logical, intent(in), optional :: debug
         TYPE (VSL_STREAM_STATE) :: stream
         
-        integer(kind=4) errcode
-        integer(kind=4) i, j
-        real (kind=8) :: rand
+        integer(int32) errcode
+        integer(int32) i, j
+        real (real64) :: rand
         integer brng, seed, method, n
         integer, allocatable :: new (:), old(:)
         integer, parameter :: lower = 1, upper = 100
@@ -90,7 +93,10 @@ contains
             call random_number(rand)
             seed = lower + int(rand * (upper - lower + 1))
         end if
-        gaussian_sample = reshape([(0.0, i=1, n_row*n_col)], [n_row, n_col])
+        
+        ! Allocate the output array
+        allocate(gaussian_sample(n_row, n_col))
+        gaussian_sample = 0.0_real64
 
     !       ***** Initializing *****
         brng = VSL_BRNG_MT19937 !! Mersenne Twister

@@ -42,7 +42,7 @@
 # Generated binaries
 *.o
 *.mod
-
+*.dat
 
 build/
 doc/

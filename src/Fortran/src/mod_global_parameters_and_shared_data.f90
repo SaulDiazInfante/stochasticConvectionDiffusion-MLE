@@ -14,7 +14,7 @@ module mod_global_parameters_and_shared_data
     real(real64), parameter :: PI = 2.D0 * DASIN(1.D0)
     real(real64), parameter :: theta = 1.0_real64
     real(real64), parameter :: beta = 0.1_real64
-    real(real64), parameter :: gamma = 1.0_real64
+    real(real64), parameter :: gamma = 2.0_real64
     real(real64), parameter :: sigma = 0.2_real64
     real(real64), parameter :: delta = 0.00001_real64
     real(real64), parameter :: L1 = 5.0_real64
@@ -108,4 +108,47 @@ contains
         allocate(gaussian_samples(nobs * NUM_GAUSSIAN_SUB_STEPS, DIM))
         gaussian_samples = 0.0_real64
     end subroutine allocate_dynamic_memory
+    
+    subroutine display_parameters()
+        use iso_fortran_env, only: real64
+        implicit none
+        
+        character(len=*), parameter :: fmt_int = "(A30, A3, I8)"
+        character(len=*), parameter :: fmt_real = "(A30, A3, ES12.6E2)"
+        
+        print *, "============================================================"
+        print *, "              Global Simulation Parameters"
+        print *, "------------------------------------------------------------"
+        
+        ! Integer Parameters Table
+        print *, ">> Integer Parameters"
+        print *, "Parameter                      |   Value"
+        print *, "------------------------------+----------------------------"
+        write(*, fmt_int) "Nx", " : ", Nx
+        write(*, fmt_int) "Ny", " : ", Ny
+        write(*, fmt_int) "DIM", " : ", DIM
+        write(*, fmt_int) "nobs", " : ", nobs
+        write(*, fmt_int) "NUM_GAUSSIAN_SUB_STEPS", " : ", NUM_GAUSSIAN_SUB_STEPS
+        write(*, fmt_int) "SEED", " : ", SEED
+        
+        print *, ""
+        
+        ! Real Parameters Table
+        print *, ">> Real Parameters"
+        print *, "Parameter                      |   Value"
+        print *, "------------------------------+----------------------------"
+        write(*, fmt_real) "L1", " : ", L1
+        write(*, fmt_real) "L2", " : ", L2
+        write(*, fmt_real) "delta", " : ", delta
+        write(*, fmt_real) "theta", " : ", theta
+        write(*, fmt_real) "beta", " : ", beta
+        write(*, fmt_real) "gamma", " : ", gamma
+        write(*, fmt_real) "sigma", " : ", sigma
+        write(*, fmt_real) "PI", " : ", PI
+        
+        print *, "============================================================"
+    end subroutine display_parameters
+
+
+
 end module mod_global_parameters_and_shared_data

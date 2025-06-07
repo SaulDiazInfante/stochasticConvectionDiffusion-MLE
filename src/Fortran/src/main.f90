@@ -9,6 +9,7 @@ program main
   use mod_random_number_generator
   use mod_setup_and_logs
   use mod_sde_solver
+  
   implicit none
   
   character(len=20), dimension(2) :: header 
@@ -60,7 +61,7 @@ program main
   !   &gaussian_sample(9000:9010), &
   !   &10)
 
-  ! call winner_increment(0.1_real64, 1000, 0.0_real64, winner_delta)
+  call scalar_winner_increment(0.0_real64, winner_delta)
   ! print *, "Winner delta: ", winner_delta 
   ! call vectorial_winner_increment(&
   !   & 0.1_real64, &

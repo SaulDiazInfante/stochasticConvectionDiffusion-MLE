@@ -58,7 +58,14 @@ target_link_libraries(mod_sde_solver PRIVATE
 )
 target_include_directories(mod_sde_solver PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
-target_link_libraries(mod_setup_and_logs PRIVATE mod_par_generators)
+target_link_libraries(mod_setup_and_logs PRIVATE 
+    mod_data_io
+    mod_global_parameters_and_shared_data
+    mod_par_generators
+    mod_sde_coefficients
+    mod_random_number_generator
+    mod_sde_solver
+)
 target_include_directories(mod_setup_and_logs PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
 # Ensure correct dependency order
@@ -101,9 +108,11 @@ target_link_libraries(test_mod_sde_solver PRIVATE
         mod_global_parameters_and_shared_data
         mod_par_generators
         mod_sde_coefficients
+        mod_data_io
+        mkl_vsl
         mod_random_number_generator
         mod_sde_solver
-        #mod_data_io
+        mod_setup_and_logs
 )
 target_include_directories(test_mod_sde_solver PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 add_test(NAME TestModSDESolver COMMAND test_mod_sde_solver)

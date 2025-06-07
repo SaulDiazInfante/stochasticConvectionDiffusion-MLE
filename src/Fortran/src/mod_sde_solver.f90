@@ -20,7 +20,7 @@
   !! over a specified time interval `delta`. The increment is computed using a Gaussian sampler.
   !!
   !! @param[in] delta The time interval over which the Wiener process increment is computed.
-  !! @param[in] n_omega The number of subintervals to divide `delta` into for the Gaussian sampling.
+  !! @param[in] NUM_GAUSSIAN_SUB_STEPS The number of subintervals to divide `delta` into for the Gaussian sampling.
   !! @param[in] user_seed (optional) An optional seed for the random number generator.
   !! @param[in] winner_0 The initial value of the Wiener process.
   !! @param[out] winner_delta The computed increment of the Wiener process over the interval `delta`.
@@ -28,27 +28,25 @@
   !! The subroutine uses the MKL Gaussian sampler to generate random samples from a normal distribution
   !! with mean 0 and standard deviation 1. These samples are then scaled by the square root of the
   !! subinterval length and summed to produce the Wiener process increment.
-  subroutine winner_increment(delta, n_omega, winner_0, winner_delta, user_seed)
+  subroutine scalar_winner_increment(winner_0, winner_delta, user_seed)
     implicit none
-    real(real64), intent(in) :: delta
-    integer(int32), intent(in) :: n_omega
     integer, intent(in), optional :: user_seed
     real(real64), intent(in) :: winner_0
     real(real64), intent(out) :: winner_delta 
     
     real(real64) dd
-    real(kind=8), allocatable :: ddW(:)
+    real(real64), allocatable :: ddW(:)
 
-    dd = delta / n_omega
+    dd = delta / NUM_GAUSSIAN_SUB_STEPS
     if (present(user_seed)) then
-      call mkl_gaussian_sampler(n_omega, 0.0_real64, 1.0_real64, ddW, user_seed)
+      call mkl_gaussian_sampler(NUM_GAUSSIAN_SUB_STEPS, 0.0_real64, 1.0_real64, ddW, user_seed)
     else
-      call mkl_gaussian_sampler(n_omega, 0.0_real64, 1.0_real64, ddW)
+      call mkl_gaussian_sampler(NUM_GAUSSIAN_SUB_STEPS, 0.0_real64, 1.0_real64, ddW)
     end if
     ddW = sqrt(dd) * ddW
     winner_delta = winner_0 + sum(ddW(:))
     return
-  end subroutine winner_increment
+  end subroutine scalar_winner_increment
   
   
   !> @brief Computes the increment of a vectorial Wiener process.
@@ -59,7 +57,7 @@
   !>
   !> @param delta The time step over which the increment is computed.
   !> @param DIM The dimension of the Wiener process.
-  !> @param n_omega The number of sub-steps within the time step `delta`.
+  !> @param NUM_GAUSSIAN_SUB_STEPS The number of sub-steps within the time step `delta`.
   !> @param user_seed (Optional) Seed for the random number generator.
   !> @param winner_0 The initial value of the Wiener process.
   !> @param winner_delta The computed increment of the Wiener process.
@@ -67,16 +65,10 @@
   !> The subroutine uses the MKL library to sample from a Gaussian distribution
   !> and scales the samples appropriately to compute the Wiener process increment.
   subroutine vectorial_winner_increment(&
-      &delta, &
-      &DIM, &
-      &n_omega, & 
-      &winner_0, & 
-      &winner_delta, & 
-      &user_seed)
+          &winner_0, &
+          &winner_delta, &
+          &user_seed)
     implicit none
-    real(real64), intent(in) :: delta
-    integer(int32), intent(in) :: DIM
-    integer(int32), intent(in) :: n_omega
     integer, intent(in), optional :: user_seed
     real(real64), intent(in) :: winner_0(DIM) 
     real(real64), intent(out) :: winner_delta(DIM) 
@@ -85,11 +77,11 @@
     real(real64), allocatable, dimension(:, :) :: ddW
     integer(int32) i
 
-    dd = delta / n_omega
+    dd = delta / NUM_GAUSSIAN_SUB_STEPS
     if (present(user_seed)) then
-      call mkl_array_gaussian_sampler(DIM, n_omega, 0.0_real64, 1.0_real64, ddW, user_seed)
+      call mkl_array_gaussian_sampler(DIM, NUM_GAUSSIAN_SUB_STEPS, 0.0_real64, 1.0_real64, ddW, user_seed)
     else
-      call mkl_array_gaussian_sampler(DIM, n_omega, 0.0_real64, 1.0_real64, ddW)
+      call mkl_array_gaussian_sampler(DIM, NUM_GAUSSIAN_SUB_STEPS, 0.0_real64, 1.0_real64, ddW)
     end if
     ddW = sqrt(dd) * ddW
     do i=1, DIM
@@ -108,15 +100,12 @@
   !>
   !> @param[in] DIM The dimension of the position vectors.
   !> @param[in] delta The time step size for the Brownian motion.
-  !> @param[in] n_omega The number of random variables (not used in current implementation).
+  !> @param[in] NUM_GAUSSIAN_SUB_STEPS The number of random variables (not used in current implementation).
   !> @param[in] startx The starting position vector of dimension `DIM`.
   !> @param[inout] endx The updated position vector of dimension `DIM`.
 !---------------------------------------------------------------------------
-  subroutine BrownianStep(DIM, delta, n_omega, startx, endx)
+  subroutine BrownianStep(startx, endx)
     implicit none
-    integer(int32), intent(in) :: DIM
-    integer(int32), intent(in) :: n_omega
-    real(real64), intent(in) :: delta
     real(real64), intent(in) :: startx(DIM)
     real(real64), intent(inout) :: endx(DIM)
     !!
@@ -124,11 +113,13 @@
     integer(int32) i
     
     !! TODO: Call mkl rng to create a vectorized version of the below code.
-    call vectorial_winner_increment(delta, DIM, n_omega, startx, dW) 
+    call vectorial_winner_increment(startx, dW)
     endx(:) = startx(:) + dW(:)
     return
   end subroutine BrownianStep
-
+  
+  
+  
 !---------------------------------------------------------------------------
   !> @brief Performs a single Milstein step for a stochastic differential equation (SDE).
   !>
@@ -156,26 +147,41 @@
     real(real64), allocatable, intent(out) :: next_u(:)
     
     real(real64), allocatable :: u_drift (:), u_diffusion(:)
-    real(real64), allocatable :: u_euler_maruyama(:)
+    real(real64), allocatable :: u_euler_maruyama(:), u_milstein_correction(:)
   
     call alloc_vector(u_drift, DIM)
     call alloc_vector(u_diffusion, DIM)
     call alloc_vector(u_euler_maruyama, DIM)
     call alloc_vector(next_u, DIM)
-    !call alloc_vector(u_milstein, DIM)
-    
-
+    call alloc_vector(u_milstein_correction, DIM)
     call eval_drift_at_u(current_u, u_drift)
     call eval_diagonal_diffusion_at_u(current_u, u_diffusion) 
-
+    
     u_euler_maruyama(:) = current_u(:) &
       & + u_drift(:) * delta &
       & + u_diffusion(:) * brownian_increment(:)
-    next_u(:) = u_euler_maruyama(:)
+    call compute_milstein_correction(brownian_increment, u_milstein_correction)
+    next_u(:) = u_euler_maruyama(:) + u_milstein_correction(:)
     return
   end subroutine milstein_step
-
-  !> @brief Solves a stochastic differential equation using the Milstein scheme.
+  
+  subroutine compute_milstein_correction(brownian_increment, milstein_correction)
+    implicit none
+    real(real64), intent(in) :: brownian_increment(DIM)
+    real(real64), allocatable, intent(out) :: milstein_correction(:)
+    real(real64), allocatable :: square_browinian_increment(:)
+   
+    call alloc_vector(milstein_correction, DIM)
+    call alloc_vector(square_browinian_increment, DIM)
+    
+    square_browinian_increment = brownian_increment ** 2
+    milstein_correction = sigma * b * (square_browinian_increment - delta)
+    deallocate(square_browinian_increment)
+  end subroutine compute_milstein_correction
+   
+   
+   
+   !> @brief Solves a stochastic differential equation using the Milstein scheme.
   !>
   !> This subroutine implements the numerical solution of a stochastic differential
   !> equation using the Milstein scheme. It initializes the necessary variables,
@@ -210,7 +216,7 @@
     ! Time stepping loop
     do i = 1, n_steps
       ! Generate Brownian increment
-      call vectorial_winner_increment(delta, DIM, 1, u_current, brownian_inc)
+      call vectorial_winner_increment(u_current, brownian_inc)
       
       ! Advance solution using Milstein scheme
       call milstein_step(u_current, brownian_inc, u_next)

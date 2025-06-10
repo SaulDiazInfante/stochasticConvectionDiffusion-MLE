@@ -36,13 +36,13 @@ module mod_setup_and_logs
     call gen_observation_times()
     call gen_eigen_values()
     call gen_matrix_diag_B()
+    ! call gen_matrix_B()
     call gen_lambda_matrix()
     call assemble_matrix_A()
     call gen_drift_matrix()
     call gen_diffusion_matrix()
   end subroutine  build_sde
 
-! TODO: code a routine to display constants parameters
   !!> @brief Displays the domain problem arrays.
   subroutine display_domain_problem_arrays()
     call print_vector_with_indices("times", times(1:10), 10)

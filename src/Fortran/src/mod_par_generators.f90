@@ -112,7 +112,24 @@ contains
     end do
     return
   end subroutine gen_matrix_diag_B
-
+  
+  !> @brief Generates the matrix B elements based on eigenvalues
+  !>
+  !> Computes B_ii = λ_i^(-γ) and stores it in either:
+  !> - A full matrix format (bmat)
+    subroutine gen_matrix_B()
+    implicit none
+    integer(int32) i
+    bmat = 0.0_real64
+    do i=1, DIM
+      bmat(i, i) = lambdas(i) ** (-gamma)
+    end do
+    return
+  end subroutine gen_matrix_B
+  
+  
+  
+  
   !> @brief Generates a diagonal matrix from a vector of eigenvalues.
   !>
   !> Converts the eigenvalue vector `lambdas` into a diagonal matrix.

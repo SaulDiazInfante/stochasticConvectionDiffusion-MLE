@@ -122,3 +122,20 @@ add_executable(test_mod_random_number_generator ${TEST_DIR}/test_mod_random_numb
 target_link_libraries(test_mod_random_number_generator PRIVATE mod_random_number_generator mkl_vsl)
 target_include_directories(test_mod_random_number_generator PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 add_test(NAME TestModRandomNumberGenerator COMMAND test_mod_random_number_generator)
+
+# Add test program for mod_sde_coefficients
+add_executable(test_mod_sde_coefficients ${TEST_DIR}/test_mod_sde_coefficients.f90)
+target_link_libraries(test_mod_sde_coefficients PRIVATE
+        mod_alloc
+        mod_global_parameters_and_shared_data
+        mod_par_generators
+        mod_sde_coefficients
+        mod_data_io
+        mkl_vsl
+        mod_random_number_generator
+        mod_sde_solver
+        mod_setup_and_logs
+)
+target_include_directories(test_mod_sde_coefficients PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
+add_test(NAME TestModSDECoefficients COMMAND test_mod_sde_coefficients)
+

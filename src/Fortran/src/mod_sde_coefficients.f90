@@ -157,14 +157,12 @@ contains
     !> @brief Compute the derivative of the diffusion coefficient for the SDE equation
     !!  @f$ dU = -(\beta \Lambda  + \theta A) U dt + \sigma B U dW(t) @f$
     !!
-    !! @param[in]   vector_U                    real64(DIM) Input vector
-    !! @param[out]  vector_derivative_diffusion real64(DIM) The derivative of diffusion term @f$ \sigma B U @f$
-    subroutine eval_diffusion_derivative_at_u(vector_U, vector_derivative_diffusion)
+    !! @param[out] difussion_derivative real64(DIM) The derivative of diffusion term @f$ \sigma B U @f$
+    subroutine compute_diffusion_derivative(difussion_derivative)
         implicit none
-        real(real64), intent(in) :: vector_U(DIM)
-        real(real64), allocatable, intent(out) :: vector_derivative_diffusion(:)
-        call alloc_vector(vector_derivative_diffusion, DIM)
-        vector_derivative_diffusion = sigma * b(:)
-    end subroutine eval_diffusion_derivative_at_u
+        real(real64), allocatable, intent(out) :: difussion_derivative(:)
+        call alloc_vector(difussion_derivative, DIM)
+        difussion_derivative = sigma * b(:)
+    end subroutine compute_diffusion_derivative
 
 end module mod_sde_coefficients

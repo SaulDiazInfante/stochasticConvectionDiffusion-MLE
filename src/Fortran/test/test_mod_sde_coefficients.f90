@@ -13,9 +13,9 @@ program test_mod_sde_coefficients
     real(real64), allocatable :: vector_drift(:)
     real(real64), allocatable :: vector_diffusion(:)
     real(real64), allocatable :: expected_mat(:,:)
-    real(real64), allocatable :: expected_vec(:), vec_diff(:)
+    real(real64), allocatable :: expected_vec(:), vec_diff(:), diffusion_derivative(:)
     
-    eps = 1.0e-8_real64
+    eps = 1.0e-12_real64
     
     status = .FALSE.
     
@@ -35,6 +35,8 @@ program test_mod_sde_coefficients
     call alloc_vector(expected_vec, DIM)
     call alloc_vector(vector_diffusion, DIM)
     call alloc_vector(vec_diff, DIM)
+    call alloc_vector(diffusion_derivative, DIM)
+    
     u(:) = 1.0_real64
     expected_mat = driftmat
     call display_parameters()
@@ -77,6 +79,26 @@ program test_mod_sde_coefficients
         print '(A10, ES30.16)', '|error|:', sum(abs(vec_diff))
         call print_vector_with_indices("eval_diffusion_at_u output:", vector_diffusion(1:10), 10)
         call print_vector_with_indices("eval_diagonal_diffusion_at_u output:", expected_vec(1:10), 10)
+        call print_vector_with_indices("error", vec_diff(1:10), 10)
+    end if
+    
+    diffusion_derivative = 0.0_real64
+    call compute_diffusion_derivative(diffusion_derivative)
+    expected_vec = sigma * b(:)
+    vec_diff = diffusion_derivative - expected_vec
+    
+    if (all(abs(vec_diff) < eps)) then
+        status = .TRUE.
+        print *, "eval_diffusion_derivative_at_u and eval_diagonal_at_u TEST PASSED"
+        print '(A10, ES30.16)', '|error|:', sum(abs(vec_diff))
+        call print_vector_with_indices("eval_diffusion_derivative output:", diffusion_derivative(1:10), 10)
+        call print_vector_with_indices("expected (sigma * b) output:", expected_vec(1:10), 10)
+        call print_vector_with_indices("error", vec_diff(1:10), 10)
+    else
+        print *, "eval_diffusion_derivative at_u and eval_diagonal_at_u TEST FAILED"
+        print '(A10, ES30.16)', '|error|:', sum(abs(vec_diff))
+        call print_vector_with_indices("eval_diffusion_derivative output:", diffusion_derivative(1:10), 10)
+        call print_vector_with_indices("eval_diagonal_diffusion_derivative:", expected_vec(1:10), 10)
         call print_vector_with_indices("error", vec_diff(1:10), 10)
     end if
     

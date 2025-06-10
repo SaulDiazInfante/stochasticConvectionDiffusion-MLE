@@ -46,6 +46,7 @@
 
 build/
 doc/
+Matlab/
 src/Fortran/docs
 # Editor/OS files
 *.swp

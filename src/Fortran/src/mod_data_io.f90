@@ -61,20 +61,25 @@ subroutine print_matrix(A, rows, cols)
     integer(int32), intent(in) :: rows, cols
     real(real64), intent(in) :: A(rows, cols)
     integer :: i, j
-
-    print *, "(++++) ", name
-    print *, "------------------------------------------------"
-    print *, ""
-
+    integer, parameter :: col_width = 15  ! Match ES13.5 format
+    character(len=6) :: row_label
+    print *, "(++++) ", trim(name)
+    print *, repeat("-", 4 + cols * col_width)
+    
     ! Print column headers
-    write(*, '(A, *(I8))') " ", (j, j=1, cols)
-
-    ! Print matrix with row indices
-    do i = 1, rows
-        write(*, '(I3, 100F8.4)') i, A(i, :)
+    write(*, '(A)', advance="no") repeat(" ", 6)  ! Space for row index
+    do j = 1, cols
+      write(*, '(I15)', advance="no") j
     end do
-    print *, "------------------------------------------------"
-    print *, ""
+    print *  ! Newline after headers
+    
+    ! Print matrix with row indices and aligned entries
+    do i = 1, rows
+      write(*, '(I6)', advance="no") i
+      write(*, '( *(ES15.6) )') A(i, 1:cols)
+    end do
+    
+    print *, repeat("=", 4 + cols * col_width)
   end subroutine print_matrix_with_indices
 
 
@@ -248,4 +253,77 @@ subroutine print_matrix(A, rows, cols)
     close(unit_number)
   end subroutine write_data
 
+  subroutine save_real64_2d_array_to_binary(filename, array)
+    use iso_fortran_env, only: real64
+    implicit none
+    
+    ! Arguments
+    character(len=*), intent(in) :: filename
+    real(real64), intent(in) :: array(:,:)
+    integer(int32) :: nobs, DIM
+    
+    ! Local
+    integer :: unit
+    nobs = size(array, 1)
+    DIM = size(array, 2)
+    ! Open file in stream (raw binary) mode and write the 2D array
+    open(newunit=unit, file=filename, access="stream", form="unformatted", &
+            status="replace", action="write")
+    write(unit) nobs, DIM ! write shape first
+    write(unit) array       ! then write data
+    close(unit)
+  
+  end subroutine save_real64_2d_array_to_binary
+  !> Find all NaN entries in a 2D real(real64) array.
+  !!
+  !! This subroutine scans a two-dimensional array of real(real64) values
+  !! and returns the row and column indices of all elements that are NaN
+  !! (Not a Number), according to the IEEE standard.
+  !!
+  !! The output arrays `row_nan` and `col_nan` contain the row and column
+  !! indices, respectively, for each detected NaN entry.
+  !!
+  !! @param[in]  A         The input 2D array of real(real64) values
+  !! @param[in]  rows      Number of rows in the array A
+  !! @param[in]  cols      Number of columns in the array A
+  !! @param[out] row_nan   Integer array containing the row indices of NaNs
+  !! @param[out] col_nan   Integer array containing the column indices of NaNs
+  !! @param[out] count_nan The number of NaN entries found in the array
+  !!
+  !! Example:
+  !!   A = reshape([1.0, 0.0/0.0, 3.0, 4.0], [2,2])
+  !!   call find_nan_indices_2d(A, 2, 2, row_nan, col_nan, count_nan)
+  !!   ! Now: count_nan = 1, row_nan(1) = 1, col_nan(1) = 2
+  !!
+  subroutine find_nan_indices_2d(A, rows, cols, row_nan, col_nan, count_nan)
+    use iso_fortran_env, only: real64, int32
+    use ieee_arithmetic, only: ieee_is_nan
+    implicit none
+    
+    ! Arguments
+    integer(int32), intent(in) :: rows, cols
+    real(real64), intent(in) :: A(rows, cols)
+    integer(int32), allocatable, intent(out) :: row_nan(:), col_nan(:)
+    integer(int32), intent(out) :: count_nan
+    
+    ! Locals
+    integer :: i, j, k
+    
+    ! First pass: count NaNs
+    count_nan = count(ieee_is_nan(A))
+    
+    allocate(row_nan(count_nan), col_nan(count_nan))
+    
+    ! Second pass: collect indices
+    k = 0
+    do i = 1, rows
+      do j = 1, cols
+        if (ieee_is_nan(A(i,j))) then
+          k = k + 1
+          row_nan(k) = i
+          col_nan(k) = j
+        end if
+      end do
+    end do
+  end subroutine find_nan_indices_2d
 end module mod_data_io

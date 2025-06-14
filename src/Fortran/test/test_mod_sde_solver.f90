@@ -1,5 +1,6 @@
 program test_mod_sde_solver
     use iso_fortran_env, only: int32, real64
+    use ieee_arithmetic, only: ieee_is_nan
     use mod_data_io
     use mod_alloc
     use mod_global_parameters_and_shared_data
@@ -10,15 +11,17 @@ program test_mod_sde_solver
     use mod_sde_solver
     implicit none
     integer ::  i
-    logical :: status
+    logical :: status, has_nan
     character(len=20), dimension(2) :: header
     character(len=50) :: file_name
     real(real64), dimension(DIM, 2) :: indexed_times
     ! Removed unused variable declarations
     real(real64), allocatable :: vectorial_winner_delta(:), initial_vector_winner(:)
     real(real64), allocatable :: current_brownian_point_path(:), next_brownian_point_path(:)
-    real(real64), allocatable :: current_u(:), next_u(:)
+    real(real64), allocatable :: current_u(:), next_u(:), u_proj(:), u_grid(:,:)
     real(real64), parameter :: eps = 1.0e-12_real64
+    integer(int32), allocatable :: row_nan(:), col_nan(:)
+    integer(int32) :: rows, cols, k, count_nan
     
     call build_sde()
     call display_parameters()
@@ -70,7 +73,7 @@ program test_mod_sde_solver
     end if
     
     call alloc_vector(current_u, DIM)
-    call alloc_vector(next_u, DIM)
+    ! next_u is allocated by milstein_step, so don't allocate here
     call milstein_step(&
         &current_u, &
         &vectorial_winner_delta, &
@@ -80,10 +83,51 @@ program test_mod_sde_solver
         print *, "ERROR: Milstein step is stuck TEST FAILED"
         call print_vector_with_indices("U_{n+1} ", next_u(1:5), 5)
     else
-        print *, "BrownianStep TEST PASSED"
+        print *, "Non zero milstein_step TEST PASSED"
         call print_vector_with_indices("U_{n+1} ", next_u(1:5), 5)
     end if
+    has_nan = any(ieee_is_nan(next_u))
+    if (has_nan) then
+        print *, "milsten_step returns an array with at least a NaN. TEST FAILED"
+        status = .FALSE.
+    else
+        print *, "milsten_step returns an array without NaN values. TEST PASSED"
+        status = .TRUE.
+    end if
     
-    deallocate(vectorial_winner_delta, initial_vector_winner)
-    deallocate(next_brownian_point_path, current_brownian_point_path, current_u, next_u)
+    status = .FALSE.
+    has_nan = .TRUE.
+    call solve_sde_with_milstein(status)
+    has_nan = any(ieee_is_nan(path))
+    if (has_nan) then
+        print *, "At least one observation of the sampled path has a NaN. TEST FAILED"
+        call find_nan_indices_2d(path, 1001, 2500, row_nan, col_nan, count_nan)
+        print *, "NaN found at:"
+        do k = 1, count_nan
+            print *, "  (", row_nan(k), ",", col_nan(k), ")"
+        end do
+        status = .FALSE.
+        
+    else
+        print *, "The sampled path does not contain NaN. TEST PASSED"
+        status = .TRUE.
+    end if
+    call save_real64_2d_array_to_binary("../data/sampled_path.bin", path)
+    
+    call alloc_vector(u_proj, DIM)
+    call alloc_array(u_grid, Nx, Ny)
+    u_proj = path(nobs-1, :)
+    call project_modal_to_grid(u_proj, u_grid)
+    call print_matrix_with_indices("U_{grid}: ", u_grid(1:5, 1:5), 5, 5)
+    ! Deallocate local arrays
+    call free_vector(initial_vector_winner)
+    call free_vector(vectorial_winner_delta)
+    call free_vector(current_u)
+    call free_vector(next_u)
+    if (allocated(next_brownian_point_path)) deallocate(next_brownian_point_path)
+    if (allocated(current_brownian_point_path)) deallocate(current_brownian_point_path)
+    if (allocated(row_nan)) deallocate(row_nan)
+    if (allocated(col_nan)) deallocate(col_nan)
+    
+    ! call deallocate_all_shared_data()  ! Commented out to avoid segfault with TBB allocator
 end program test_mod_sde_solver

@@ -68,6 +68,14 @@ target_link_libraries(mod_setup_and_logs PRIVATE
 )
 target_include_directories(mod_setup_and_logs PRIVATE ${CMAKE_Fortran_MODULE_DIRECTORY})
 
+# Add explicit build dependencies to ensure modules are built in correct order
+add_dependencies(mod_global_parameters_and_shared_data mod_alloc)
+add_dependencies(mod_par_generators mod_global_parameters_and_shared_data)
+add_dependencies(mod_sde_coefficients mod_alloc mod_global_parameters_and_shared_data)
+add_dependencies(mod_random_number_generator mkl_vsl)
+add_dependencies(mod_sde_solver mod_random_number_generator mod_par_generators mod_sde_coefficients mod_global_parameters_and_shared_data)
+add_dependencies(mod_setup_and_logs mod_data_io mod_global_parameters_and_shared_data mod_par_generators mod_sde_coefficients mod_random_number_generator mod_sde_solver)
+
 # Ensure correct dependency order
 set(MY_LIBS
         mod_alloc

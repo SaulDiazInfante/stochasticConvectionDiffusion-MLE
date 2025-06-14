@@ -36,22 +36,21 @@ module mod_setup_and_logs
     call gen_observation_times()
     call gen_eigen_values()
     call gen_matrix_diag_B()
-    ! call gen_matrix_B()
     call gen_lambda_matrix()
     call assemble_matrix_A()
     call gen_drift_matrix()
     call gen_diffusion_matrix()
+    call compute_diffusion_derivative()
   end subroutine  build_sde
 
   !!> @brief Displays the domain problem arrays.
   subroutine display_domain_problem_arrays()
     call print_vector_with_indices("times", times(1:10), 10)
     call print_vector_with_indices("eigen values", lambdas(1:10), 10)
+    call print_vector_with_indices("diag(B)", b(1:10), 10)
     call print_matrix_with_indices("B", bmat(1:5, 1:5), 5, 5)
-    call print_vector_with_indices("diag(B)", b(1:5), 5)
     call print_matrix_with_indices("Lambda", lambdamatrix(1:5, 1:5), 5, 5)  
     call print_matrix_with_indices("A", a(1:5, 1:5), 5, 5)
-    call print_matrix_with_indices("Lambda_diag", b(1:5), 5, 5)  
     call print_matrix_with_indices("Drift matrix", driftmat(1:5, 1:5), 5, 5)
     call print_matrix_with_indices(&
       &"Diffusion matrix", &

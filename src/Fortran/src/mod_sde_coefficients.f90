@@ -11,6 +11,9 @@ module mod_sde_coefficients
     !include 'mkl_blas.fi'
 contains
     
+
+    
+    
     !> @brief Generates the drift matrix for a stochastic differential equation.
     !>
     !> The drift matrix is computed as:
@@ -157,12 +160,20 @@ contains
     !> @brief Compute the derivative of the diffusion coefficient for the SDE equation
     !!  @f$ dU = -(\beta \Lambda  + \theta A) U dt + \sigma B U dW(t) @f$
     !!
-    !! @param[out] difussion_derivative real64(DIM) The derivative of diffusion term @f$ \sigma B U @f$
-    subroutine compute_diffusion_derivative(difussion_derivative)
+    !! @param[out] diffusion_derivative real64(DIM) The derivative of diffusion term @f$ \sigma B @f$
+    subroutine compute_diffusion_derivative()
         implicit none
-        real(real64), allocatable, intent(out) :: difussion_derivative(:)
-        call alloc_vector(difussion_derivative, DIM)
-        difussion_derivative = sigma * b(:)
+        diffusion_derivative = sigma * b(:)
     end subroutine compute_diffusion_derivative
-
+    
+    !> @brief Evaluate the derivative of the diffusion coefficient for the SDE equation
+    !!  @f$ dU = -(\beta \Lambda  + \theta A) U dt + \sigma B U dW(t) @f$
+    !!
+    !! @param[out] vector_diffusion_derivative real64(DIM) The derivative of diffusion term @f$ \sigma B @f$
+    subroutine eval_diffusion_derivative(vector_diffusion_derivative)
+        implicit none
+        real(real64), allocatable, intent(out) :: vector_diffusion_derivative(:)
+        call alloc_vector(vector_diffusion_derivative, DIM)
+        vector_diffusion_derivative = sigma * b(:)
+    end subroutine eval_diffusion_derivative
 end module mod_sde_coefficients

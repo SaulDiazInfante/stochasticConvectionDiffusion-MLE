@@ -60,13 +60,18 @@ contains
     allocate(eigen_values_(DIM))
     eigen_values_ = 0.0_real64
     
-    do i=1, Nx
-      do j=1, Ny
-        m = i + (j - 1) * Ny
-        lambda_ij = pi_square * ((i * L1_res)**2 + (j * L2_res)**2)
-        eigen_values_(m) = lambda_ij
-      end do
+do i=1, Nx
+    do j=1, Ny
+      m = i + (j - 1) * Nx
+      lambda_ij = pi_square * ((i * L1_res)**2 + (j * L2_res)**2)
+      ! Ensure eigenvalue is not too small to prevent numerical issues
+      if (lambda_ij < 1.0e-12_real64) then
+        print *, "Warning: Very small eigenvalue at (i,j)=", i, j, ": ", lambda_ij
+        lambda_ij = 1.0e-12_real64
+      end if
+      eigen_values_(m) = lambda_ij
     end do
+  end do
     
     ! Store the eigenvalues in the global lambdas array
     lambdas = eigen_values_
@@ -105,10 +110,27 @@ contains
   subroutine gen_matrix_diag_B()
     implicit none
     integer(int32) i
+    real(real64), parameter :: lambda_min = 1.0e-3_real64
+    real(real64), parameter :: b_max = 100.0_real64
+    real(real64) :: b_temp
 
     b(:) = 0.0_real64
     do i=1, DIM
-      b(i) = lambdas(i) ** (-gamma)
+      ! Add numerical stability check to prevent extremely large values
+      if (lambdas(i) < lambda_min) then
+        print *, "Warning: Very small eigenvalue detected at index", i, ": ", lambdas(i)
+        b_temp = lambda_min ** (-gamma)
+      else
+        b_temp = lambdas(i) ** (-gamma)
+      end if
+      
+      ! Bound the B values to prevent numerical overflow
+      if (b_temp > b_max) then
+        print *, "Warning: Large B value bounded at index", i, "from", b_temp, "to", b_max
+        b(i) = b_max
+      else
+        b(i) = b_temp
+      end if
     end do
     return
   end subroutine gen_matrix_diag_B
@@ -167,10 +189,10 @@ contains
 
     do i = 1, Nx
       do j = 1, Ny
-        m = i + (j - 1) * Ny
+        m = i + (j - 1) * Nx
           do k = 1, Nx
             do l = 1, Ny
-                n = k + (l - 1) * Ny
+                n = k + (l - 1) * Nx
                 a(m, n) = AM(idx)
                 idx = idx + 1
             end do

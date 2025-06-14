@@ -1,6 +1,4 @@
-function Evolution
 
-%% Parameters:
 
 Nx = 50; Ny = 50; %Numeros de puntos en la malla
 Lx = 5; Ly = 5;
@@ -11,47 +9,32 @@ T = .5;
 dt = 10^(-5); %Tamanio de paso
 %T = 10000*dt;
 
-%% Load projected initial condition
 
-load('Data/u0_proj_row.dat')
-%Loads u0_proj_row
-%Nx and Ny
-
-load('Data/MatrixLambda.dat')
-%Loads Lambda_row
-
-% load('MatrixB.dat')
-% %Loads B_row
-
-load('Data/MatrixA.dat')
-%Loads A_row
+load('Data/u0_proj_row.mat');
+load('Data/MatrixLambda.dat');
+load('Data/MatrixB.dat');
+load('Data/MatrixA.dat');
 
 N2 = Nx*Ny;
 %vcoef = zeros(Nx,Ny,Nx,Ny);
 %u0_proj = zeros(Nx,Ny);
 
 A = zeros(N2,N2);
-%B = zeros(N2,N2);
+B = zeros(N2,N2);
 Lambda = zeros(N2,N2);
 
 r = 0;
 for i = 1:Nx
     for j = 1:Ny
-        m = i+(j-1)*Nx; %Corrected: m = i+(j-1)*Ny
+        m = i+(j-1)*Nx;
         %u0_proj(i,j) = u0_proj_row(m,1);
         for k = 1:Nx
             for l = 1:Ny
-                n = k+(l-1)*Nx; %Corrected: k+(l-1)*Ny
-                r = r+1; %Va contando de acuerdo a 
-                %Matrix A:
-                %vcoef(i,j,k,l) = A_row(r,1);
-                A(m,n) = MatrixA(r,1);
-                %Matrix B & Lambda:
-                if i == k && j == l
-                    %B(m,n) = MatrixB(r,1);
-                    %
-                    Lambda(m,n) = MatrixLambda(r,1);
-                end
+                n = k+(l-1)*Nx;
+                r = r+1;
+                A(m, n) = MatrixA(r, 1);
+                B(m, n) = MatrixB(r, 1);
+                Lambda(m, n) = MatrixLambda(r, 1);
             end
         end
     end
@@ -66,7 +49,8 @@ M = beta*Lambda+theta*A;
 t = 0;
 while t < T
     t
-    u0_proj_row_np1 = u0_proj_row_n-M*u0_proj_row_n*dt;
+    u0_proj_row_np1 = u0_proj_row_n - ...
+        M * u0_proj_row_n * dt;
 
     u0_proj_row_n = u0_proj_row_np1;
 
@@ -76,9 +60,9 @@ end
 %Pass row to matrix form:
 
 u0_proj_np1 = zeros(Nx,Ny);
-for i = 1:Nx
+for i = 1: Nx
     for j = 1:Ny
-        m = i+(j-1)*Nx; %Corrected: m = i+(j-1)*Ny
+        m = i + (j - 1) *  Nx;
         u0_proj_np1(i,j) = u0_proj_row_np1(m,1);
     end
 end

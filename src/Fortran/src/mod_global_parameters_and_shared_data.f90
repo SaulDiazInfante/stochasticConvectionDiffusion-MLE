@@ -18,7 +18,7 @@ module mod_global_parameters_and_shared_data
     integer(int32), parameter :: Ny = 50
     integer(int32), parameter :: DIM = Nx * Ny
     integer(int32), parameter :: SEED = 765431
-    integer(int32), parameter :: nobs = 50000
+    integer(int32), parameter :: nobs = 50
     integer(int32), parameter :: NUM_GAUSSIAN_SUB_STEPS = 10
     real(real64), parameter :: PI = acos(-1.0_real64)
     real(real64), parameter :: theta = 1.0_real64

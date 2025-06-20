@@ -55,42 +55,64 @@ subroutine print_matrix(A, rows, cols)
   !> @param[in]  A     The matrix to print.
   !> @param[in]  rows  Number of rows in the matrix.
   !> @param[in]  cols  Number of columns in the matrix.
-  subroutine print_matrix_with_indices(name, A, rows, cols)
-    implicit none
-    character(len=*), intent(in) :: name
-    integer(int32), intent(in) :: rows, cols
-    real(real64), intent(in) :: A(rows, cols)
-    integer :: i, j
-    integer, parameter :: col_width = 15  ! Match ES13.5 format
-    character(len=6) :: row_index_str
-    character(len=20) :: val_str
-    character(len=500) :: full_line  ! Long enough for several columns
-    character(len=15) :: col_index_str
+  subroutine print_matrix_with_indices(name, A, rows, cols, prefix)
+  use iso_fortran_env, only: int32, real64
+  implicit none
 
-    print *, "(++++) ", trim(name)
-    print *, repeat("-", 4 + cols * col_width)
-    
-    ! Print column headers
-    full_line = repeat(" ", 6)  ! Space for row index
+  character(len=*), intent(in) :: name
+  character(len=*), intent(in), optional :: prefix
+  integer(int32), intent(in) :: rows, cols
+  real(real64), intent(in) :: A(rows, cols)
+
+  integer :: i, j
+  integer, parameter :: col_width = 20
+  character(len=1000) :: line_buffer
+  character(len=30)  :: cell
+  character(len=8)   :: row_index
+
+  !-- Header
+  if (present(prefix)) then
+    write(*,'(A)') trim(prefix)//' '//trim(name)
+  else
+    write(*,'(A)') '(++++) '//trim(name)
+  end if
+
+  !-- Column indices
+  line_buffer = '        '
+  do j = 1, cols
+    write(cell, '(I20)') j
+    line_buffer = line_buffer(1:len_trim(line_buffer)) // cell(1:len_trim(cell))
+  end do
+  write(*,'(A)') trim(line_buffer)
+
+  !-- Matrix values with scientific notation
+  do i = 1, rows
+    write(row_index, '(I6)') i
+    line_buffer = adjustl(row_index)
     do j = 1, cols
-      write(col_index_str, '(I15)') j
-      full_line = trim(full_line)//trim(col_index_str)
+      write(cell, '(ES20.10)') A(i, j)
+      line_buffer = line_buffer(1:len_trim(line_buffer)) // cell(1:len_trim(cell))
     end do
-    print *, trim(full_line)
-    
-    ! Print matrix with row indices and aligned entries
-    do i = 1, rows
-      write(row_index_str, '(I6)') i
-      full_line = row_index_str
-      do j = 1, cols
-        write(val_str, '(ES20.10)') A(i,j)
-        full_line = trim(full_line)//'  '//trim(val_str)
-      end do
-      print *, trim(full_line)
-    end do
-    
-    print *, repeat("=", 4 + cols * col_width)
-  end subroutine print_matrix_with_indices
+    write(*,'(A)') trim(line_buffer)
+  end do
+
+  !-- Footer
+  write(*,'(A)') repeat("=", 8 + cols * col_width)
+
+end subroutine print_matrix_with_indices
+
+
+  !> @brief Generates a footer line for matrix printing.
+  !! This helper function creates a repeated "=" line based on the number of columns and column width.
+  !! @param[in] cols Number of columns in the matrix.
+  !! @param[in] col_width Width of each column.
+  !! @return A string containing the footer line.
+  function generate_footer(cols, col_width) result(footer)
+    implicit none
+    integer, intent(in) :: cols, col_width
+    character(len=500) :: footer
+    footer = repeat("=", 4 + cols * col_width)
+  end function generate_footer
 
 
   !> @brief Writes a matrix to a file.

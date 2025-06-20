@@ -18,7 +18,7 @@ module mod_global_parameters_and_shared_data
     integer(int32), parameter :: Ny = 50
     integer(int32), parameter :: DIM = Nx * Ny
     integer(int32), parameter :: SEED = 765431
-    integer(int32), parameter :: nobs = 50
+    integer(int32), parameter :: nobs = 50000
     integer(int32), parameter :: NUM_GAUSSIAN_SUB_STEPS = 10
     real(real64), parameter :: PI = acos(-1.0_real64)
     real(real64), parameter :: theta = 1.0_real64
@@ -144,7 +144,7 @@ contains
         use iso_fortran_env, only: real64
         implicit none
         character(len=*), parameter :: fmt_int = "(A30, A3, I8)"
-        character(len=*), parameter :: fmt_real = "(A30, A3, ES12.6E2)"
+        character(len=*), parameter :: fmt_real = "(A30, A3, ES12.6)"
         print *, "============================================================"
         print *, "              Global Simulation Parameters"
         print *, "------------------------------------------------------------"

@@ -62,21 +62,31 @@ subroutine print_matrix(A, rows, cols)
     real(real64), intent(in) :: A(rows, cols)
     integer :: i, j
     integer, parameter :: col_width = 15  ! Match ES13.5 format
-    character(len=6) :: row_label
+    character(len=6) :: row_index_str
+    character(len=20) :: val_str
+    character(len=500) :: full_line  ! Long enough for several columns
+    character(len=15) :: col_index_str
+
     print *, "(++++) ", trim(name)
     print *, repeat("-", 4 + cols * col_width)
     
     ! Print column headers
-    write(*, '(A)', advance="no") repeat(" ", 6)  ! Space for row index
+    full_line = repeat(" ", 6)  ! Space for row index
     do j = 1, cols
-      write(*, '(I15)', advance="no") j
+      write(col_index_str, '(I15)') j
+      full_line = trim(full_line)//trim(col_index_str)
     end do
-    print *  ! Newline after headers
+    print *, trim(full_line)
     
     ! Print matrix with row indices and aligned entries
     do i = 1, rows
-      write(*, '(I6)', advance="no") i
-      write(*, '( *(ES15.6) )') A(i, 1:cols)
+      write(row_index_str, '(I6)') i
+      full_line = row_index_str
+      do j = 1, cols
+        write(val_str, '(ES20.10)') A(i,j)
+        full_line = trim(full_line)//'  '//trim(val_str)
+      end do
+      print *, trim(full_line)
     end do
     
     print *, repeat("=", 4 + cols * col_width)
@@ -141,12 +151,16 @@ subroutine print_matrix(A, rows, cols)
     integer(int32), intent(in) :: N
     real(real64), intent(in) :: V(N)
     integer :: i
+    character(len=6) :: index_str
+    character(len=20) :: value_str
     print*,"(++++) vector ", name
     ! Print header
     print *, "  Index    Value"
     print *, "----------------"
     do i = 1, N
-        print '(I6, A1, ES15.7E2)', i, char(9), V(i)  ! Print index and value
+        write(index_str, '(I6)') i
+        write(value_str, '(ES20.10)') V(i)
+        print *, trim(index_str)//'  '//trim(value_str)
     end do
     print*,""
   end subroutine print_vector_with_indices
@@ -326,4 +340,47 @@ subroutine print_matrix(A, rows, cols)
       end do
     end do
   end subroutine find_nan_indices_2d
+  
+  !> Display a terminal-based progress bar with percentage, iteration legend, and status message.
+  !! This subroutine updates a single-line progress bar in the console,
+  !! showing the current progress of a loop in the form of:
+  !!   [##########----------]  50% (50/100) - Solving
+  !!
+  !! @param i       Current iteration (1-based)
+  !! @param n       Total number of iterations
+  !! @param status  A short status string describing the current process (e.g., "Solving", "Reshaping")
+  subroutine show_progress(i, n, status)
+    implicit none
+    integer, intent(in) :: i, n
+    character(len=*), intent(in) :: status
+    integer :: percent, bar_width, j
+    character(len=100) :: bar
+    character(len=200) :: progress_str
+    
+    bar_width = 40
+    percent = int(real(i) / real(n) * 100.0)
+    
+    bar = "["
+    
+    do j = 1, bar_width
+      if (j <= percent * bar_width / 100) then
+        bar(j+1:j+1) = "#"
+      else
+        bar(j+1:j+1) = "-"
+      end if
+    end do
+    
+    bar(bar_width+2:bar_width+2) = "]"
+    
+    ! First construct the complete string
+    write(progress_str, '(A,I3,A,I8,A,I8,A)') &
+          trim(bar)//" ", percent, "% (", i, "/", n, ")"
+    ! Then write it with the status
+    write(*, '(A,A,A)', advance='no') char(13), trim(progress_str), " - "//trim(status)
+    
+    if (i == n) then
+      print *  ! new line after final step
+    end if
+  end subroutine show_progress
+
 end module mod_data_io

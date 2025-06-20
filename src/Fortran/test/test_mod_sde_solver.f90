@@ -20,6 +20,7 @@ program test_mod_sde_solver
     real(real64), allocatable :: current_brownian_point_path(:), next_brownian_point_path(:)
     real(real64), allocatable :: current_u(:), next_u(:), u_proj(:), u_grid(:,:)
     real(real64), allocatable :: u_proj_2d(:, :)
+    real(real64) :: temp_u_proj(5), temp_grid(5,5)  ! Temporary arrays for slices
     real(real64), parameter :: eps = 1.0e-12_real64
     integer(int32), allocatable :: row_nan(:), col_nan(:)
     integer(int32) :: rows, cols, k, count_nan
@@ -36,7 +37,7 @@ program test_mod_sde_solver
     if ( winner_delta /= 0.0_real64 ) then
         status = .TRUE.
         print *, 'Scalar Winner Increment TEST PASSED'
-        print '(A10, ES12.5)',  'DeltaW: ', winner_delta
+        print '(A15, ES20.10)',  'DeltaW: ', winner_delta
     else
         print *, 'Scalar Winner Increment  TEST FAILED'
     endif
@@ -52,11 +53,21 @@ program test_mod_sde_solver
     if (all(abs(vectorial_winner_delta) < eps)) then
         print *, "ERROR: all entries are zero"
         print *, "Vectporial Winner Increment  TEST FAILED"
-        call print_vector_with_indices("Delta_W", vectorial_winner_delta(1:5), 5)
+        ! Create temp array with explicit type for sliced data
+        block
+          real(real64) :: temp_delta_w(5)
+          temp_delta_w = vectorial_winner_delta(1:5)
+          call print_vector_with_indices("Delta_W", temp_delta_w, 5)
+        end block
     else
         status = .TRUE.
         print *, 'Vecorial Winner Increment TEST PASSED'
-        call print_vector_with_indices("Delta_W", vectorial_winner_delta(1:5), 5)
+        ! Create temp array with explicit type for sliced data
+        block
+          real(real64) :: temp_delta_w(5)
+          temp_delta_w = vectorial_winner_delta(1:5)
+          call print_vector_with_indices("Delta_W", temp_delta_w, 5)
+        end block
     end if
     
     allocate(next_brownian_point_path(DIM))
@@ -68,10 +79,20 @@ program test_mod_sde_solver
     status = .FALSE.
     if (all(abs(next_brownian_point_path) < eps)) then
         print *, "ERROR: Vectorial Browninan path stuck TEST FAILED"
-        call print_vector_with_indices("W_{t} + \Dela W: ", next_brownian_point_path(1:5), 5)
+        ! Create temp array with explicit type for sliced data
+        block
+          real(real64) :: temp_path(5)
+          temp_path = next_brownian_point_path(1:5)
+          call print_vector_with_indices("W_{t} + \Dela W: ", temp_path, 5)
+        end block
     else
         print *, "BrownianStep TEST PASSED"
-        call print_vector_with_indices("W_{t} + \Dela W: ", next_brownian_point_path(1:5), 5)
+        ! Create temp array with explicit type for sliced data
+        block
+          real(real64) :: temp_path(5)
+          temp_path = next_brownian_point_path(1:5)
+          call print_vector_with_indices("W_{t} + \Dela W: ", temp_path, 5)
+        end block
     end if
     
     call alloc_vector(current_u, DIM)
@@ -83,10 +104,20 @@ program test_mod_sde_solver
     &)
     if (all(abs(next_u) < eps)) then
         print *, "ERROR: Milstein step is stuck TEST FAILED"
-        call print_vector_with_indices("U_{n+1} ", next_u(1:5), 5)
+        ! Create temp array with explicit type for sliced data
+        block
+          real(real64) :: temp_next_u(5)
+          temp_next_u = next_u(1:5)
+          call print_vector_with_indices("U_{n+1} ", temp_next_u, 5)
+        end block
     else
         print *, "Non zero milstein_step TEST PASSED"
-        call print_vector_with_indices("U_{n+1} ", next_u(1:5), 5)
+        ! Create temp array with explicit type for sliced data
+        block
+          real(real64) :: temp_next_u(5)
+          temp_next_u = next_u(1:5)
+          call print_vector_with_indices("U_{n+1} ", temp_next_u, 5)
+        end block
     end if
     has_nan = any(ieee_is_nan(next_u))
     if (has_nan) then
@@ -106,7 +137,7 @@ program test_mod_sde_solver
         call find_nan_indices_2d(path, 1001, 2500, row_nan, col_nan, count_nan)
         print *, "NaN found at:"
         do k = 1, count_nan
-            print *, "  (", row_nan(k), ",", col_nan(k), ")"
+            print '(A,I0,A,I0,A)', "  (", row_nan(k), ",", col_nan(k), ")"
         end do
         status = .FALSE.
         
@@ -120,13 +151,21 @@ program test_mod_sde_solver
     call alloc_array(u_grid, Nx, Ny)
     call alloc_array(u_proj_2d, Nx, Ny)
     u_proj = path(nobs, :)
-    print *, "--------------------------------------------------"
-    call print_vector_with_indices("u_proj:", u_proj(1:5), 5)
+
+    print '(A)', "--------------------------------------------------"
+    ! Print first 5 elements of u_proj
+    temp_u_proj = u_proj(1:5)
+    call print_vector_with_indices("u_proj", temp_u_proj, 5)
+
+    ! Reshape and make temporary copy
     call reshape_to_2d(u_proj, u_proj_2d)
-    call print_matrix_with_indices("reshape(u_proj)", u_proj_2d(1:5, 1:5) ,5, 5)
+    temp_grid = u_proj_2d(1:5, 1:5)
+    call print_matrix_with_indices("reshape(u_proj)", temp_grid, 5, 5)
     
+    ! Project and make temporary copy
     call project_modal_to_grid(u_proj_2d, u_grid)
-    call print_matrix_with_indices("U_{grid}: ", u_grid(1:5, 1:5), 5, 5)
+    temp_grid = u_grid(1:5, 1:5)
+    call print_matrix_with_indices("U_grid", temp_grid, 5, 5)
     ! Deallocate local arrays
     call free_vector(initial_vector_winner)
     call free_vector(vectorial_winner_delta)

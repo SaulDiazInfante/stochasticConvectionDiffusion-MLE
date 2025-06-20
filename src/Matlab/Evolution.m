@@ -1,7 +1,7 @@
 Nx = 50; Ny = 50; %Numeros de puntos en la malla
 Lx = 5; Ly = 5;
 
-N_ITER = 50;
+N_ITER = 50000;
 beta = 0.1;
 theta = 1;
 T = .5;
@@ -46,11 +46,11 @@ M = beta*Lambda+theta*A;
 t = 0;
 % while t < T
 for i = 0:N_ITER-1
+  t = t+dt;
   progress_bar(i+1, N_ITER, 40, 'Integratiing with Euler')
   u0_proj_row_np1 = u0_proj_row_n - ...
       M * u0_proj_row_n * dt;
   u0_proj_row_n = u0_proj_row_np1;
-  t = t+dt;
 end
 
 u0_proj_np1 = zeros(Nx,Ny);
@@ -99,3 +99,4 @@ quiver(xgrid, ygrid, v1grid, v2grid)
 contour(xgrid, ygrid, u0_comp_np1_grid,100); colorbar;
 axis([0,Lx,0,Ly])
 u0_comp_np1_grid(1:5, 1:5)
+save('Data/u0_grid_.mat','u0_comp_np1_grid','Nx','Ny')

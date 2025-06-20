@@ -46,10 +46,10 @@ module mod_setup_and_logs
   !!> @brief Displays the domain problem arrays.
   subroutine display_domain_problem_arrays()
     call print_vector_with_indices("times", times(1:10), 10)
-    call print_vector_with_indices("eigen values", lambdas(1:10), 10)
+    call print_vector_with_indices("eigen values", lambdas(2491:2500), 10)
     call print_vector_with_indices("diag(B)", b(1:10), 10)
     call print_matrix_with_indices("B", bmat(1:5, 1:5), 5, 5)
-    call print_matrix_with_indices("Lambda", lambdamatrix(1:5, 1:5), 5, 5)  
+    call print_matrix_with_indices("Lambda", lambdamatrix(2495:2500, 2495:2500), 5, 5)
     call print_matrix_with_indices("A", a(1:5, 1:5), 5, 5)
     call print_matrix_with_indices("Drift matrix", driftmat(1:5, 1:5), 5, 5)
     call print_matrix_with_indices(&

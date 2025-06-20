@@ -19,12 +19,14 @@ program test_mod_sde_solver
     real(real64), allocatable :: vectorial_winner_delta(:), initial_vector_winner(:)
     real(real64), allocatable :: current_brownian_point_path(:), next_brownian_point_path(:)
     real(real64), allocatable :: current_u(:), next_u(:), u_proj(:), u_grid(:,:)
+    real(real64), allocatable :: u_proj_2d(:, :)
     real(real64), parameter :: eps = 1.0e-12_real64
     integer(int32), allocatable :: row_nan(:), col_nan(:)
     integer(int32) :: rows, cols, k, count_nan
     
     call build_sde()
     call display_parameters()
+    call display_domain_problem_arrays()
     call scalar_winner_increment(&
             &0.0_real64,&
             &winner_delta,&
@@ -112,12 +114,18 @@ program test_mod_sde_solver
         print *, "The sampled path does not contain NaN. TEST PASSED"
         status = .TRUE.
     end if
-    call save_real64_2d_array_to_binary("../data/sampled_path.bin", path)
+    ! call save_real64_2d_array_to_binary("../data/sampled_path.bin", path)
     
     call alloc_vector(u_proj, DIM)
     call alloc_array(u_grid, Nx, Ny)
-    u_proj = path(nobs-1, :)
-    call project_modal_to_grid(u_proj, u_grid)
+    call alloc_array(u_proj_2d, Nx, Ny)
+    u_proj = path(nobs, :)
+    print *, "--------------------------------------------------"
+    call print_vector_with_indices("u_proj:", u_proj(1:5), 5)
+    call reshape_to_2d(u_proj, u_proj_2d)
+    call print_matrix_with_indices("reshape(u_proj)", u_proj_2d(1:5, 1:5) ,5, 5)
+    
+    call project_modal_to_grid(u_proj_2d, u_grid)
     call print_matrix_with_indices("U_{grid}: ", u_grid(1:5, 1:5), 5, 5)
     ! Deallocate local arrays
     call free_vector(initial_vector_winner)

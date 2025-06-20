@@ -9,14 +9,129 @@
  module mod_sde_solver
   use iso_fortran_env, only: int32, real64
   use ieee_arithmetic, only: ieee_is_nan
+  use mod_global_parameters_and_shared_data, only: delta, DIM, NUM_GAUSSIAN_SUB_STEPS
   use mod_random_number_generator
   use mod_par_generators
   use mod_sde_coefficients
   use mod_data_io
+  
   implicit none
+  
+  public :: vx_field, vy_field
   contains
-
-  !> @brief Computes the increment of a Wiener process over a given time interval.
+   !> Evaluates the x-component of a velocity field at a point \f$(x, y)\f$.
+   !!
+   !! The field combines a linear and trigonometric structure centered at
+   !! \f$(L_1/2, L_2/2)\f$, modulated by a Gaussian envelope:
+   !!
+   !! \f[
+   !! \text{vx\_field}(x, y) =
+   !! \left( x + y + 2 \cos\left(\frac{x}{2}\right) + \sin\left(\frac{x}{2}\right) \right)
+   !! \exp\left( -0.6 \left[ (x - L_1/2)^2 + (y - L_2/2)^2 \right]^r \right)
+   !! \f]
+   !!
+   !! @param[in]  x   X-coordinate
+   !! @param[in]  y   Y-coordinate
+   !! @return     vx  Value of the x-component of velocity at \f$(x, y)\f$
+   function vx_field(x, y) result(vx)
+     real(real64), intent(in) :: x, y
+     real(real64) :: vx
+     real(real64) :: r, L1, L2, exponent, coeff
+     
+     r = 1.0_real64
+     L1 = 5.0_real64
+     L2 = 5.0_real64
+     
+     exponent = -0.6_real64 * ((x - L1/2.0_real64)**2 + (y - L2/2.0_real64)**2)**r
+     coeff = x + y + 2.0_real64 * cos(x / 2.0_real64) + sin(x / 2.0_real64)
+     vx = coeff * exp(exponent)
+   end function vx_field
+   
+   !> Evaluates the y-component of a velocity field at a point \f$(x, y)\f$.
+   !!
+   !! This function defines a localized oscillatory field, centered at
+   !! \f$(L_1/2, L_2/2)\f$ with exponential-trigonometric modulation:
+   !!
+   !! \f[
+   !! \text{vy\_field}(x, y) =
+   !! \left( -\frac{8}{17} e^{x/2} \cos(2x) + \frac{2}{17} e^{x/2} \sin(2x) - y \right)
+   !! \exp\left( -0.6 \left[ (x - L_1/2)^2 + (y - L_2/2)^2 \right]^r \right)
+   !! \f]
+   !!
+   !! @param[in]  x   X-coordinate
+   !! @param[in]  y   Y-coordinate
+   !! @return     vy  Value of the y-component of velocity at \f$(x, y)\f$
+   function vy_field(x, y) result(vy)
+     real(real64), intent(in) :: x, y
+     real(real64) :: vy
+     real(real64) :: r, L1, L2, exponent, coeff
+     
+     r = 1.0_real64
+     L1 = 5.0_real64
+     L2 = 5.0_real64
+     
+     exponent = -0.6_real64 * ((x - L1/2.0_real64)**2 + (y - L2/2.0_real64)**2)**r
+     coeff = (-8.0_real64 / 17.0_real64) * exp(x / 2.0_real64) * cos(2.0_real64 * x) + &
+             (2.0_real64 / 17.0_real64) * exp(x / 2.0_real64) * sin(2.0_real64 * x) - y
+     vy = coeff * exp(exponent)
+   end function vy_field
+   
+   !> Computes a scalar field u0(x, y) normalized by domain size.
+   !!
+   !! \f[
+   !! u0(x, y) = \frac{xy}{L_x L_y}
+   !! \f]
+   !! Useful for defining a smooth, normalized initial condition.
+   !!
+   !! @param[in] x   X-coordinate
+   !! @param[in] y   Y-coordinate
+   !! @param[in] Lx  Domain size in x
+   !! @param[in] Ly  Domain size in y
+   !! @return    val Value of the scalar field u0
+   function u0(x, y, Lx, Ly) result(val)
+     real(real64), intent(in) :: x, y, Lx, Ly
+     real(real64) :: val
+     val = x * y / (Lx * Ly)
+   end function u0
+   
+   !> Computes spatial grids and velocity/scalar fields.
+   !!
+   !! For each grid point (ix, iy), computes x/y positions and evaluates
+   !! vx_field, vy_field, and u0 at that location.
+   !!
+   !! @param[in]  Nx       Number of grid points in x
+   !! @param[in]  Ny       Number of grid points in y
+   !! @param[in]  Lx       Domain length in x
+   !! @param[in]  Ly       Domain length in y
+   !! @param[out] xgrid    X-coordinate grid
+   !! @param[out] ygrid    Y-coordinate grid
+   !! @param[out] vxgrid   X-component velocity field
+   !! @param[out] vygrid   Y-component velocity field
+   !! @param[out] u0grid   Scalar field u0
+   subroutine compute_grids(Nx, Ny, Lx, Ly, xgrid, ygrid, vxgrid, vygrid, u0grid)
+     integer, intent(in) :: Nx, Ny
+     real(real64), intent(in) :: Lx, Ly
+     real(real64), intent(out) :: xgrid(Nx,Ny), ygrid(Nx,Ny)
+     real(real64), intent(out) :: vxgrid(Nx,Ny), vygrid(Nx,Ny)
+     real(real64), intent(out) :: u0grid(Nx,Ny)
+     integer :: ix, iy
+     real(real64) :: xi, yj
+     
+     do iy = 1, Ny
+       do ix = 1, Nx
+         xgrid(ix,iy) = Lx / Nx * (ix - 0.5_real64)
+         ygrid(ix,iy) = Ly / Ny * (iy - 0.5_real64)
+         xi = xgrid(ix, iy)
+         yj = ygrid(ix, iy)
+         vxgrid(ix,iy) = vx_field(xi, yj)
+         vygrid(ix,iy) = vy_field(xi, yj)
+         u0grid(ix,iy) = u0(xi, yj, Lx, Ly)
+       end do
+     end do
+   end subroutine compute_grids
+   
+   
+   !> @brief Computes the increment of a Wiener process over a given time interval.
   !!
   !! This subroutine calculates the increment of a Wiener process (also known as Brownian motion)
   !! over a specified time interval `delta`. The increment is computed using a Gaussian sampler.
@@ -31,7 +146,6 @@
   !! with mean 0 and standard deviation 1. These samples are then scaled by the square root of the
   !! subinterval length and summed to produce the Wiener process increment.
   subroutine scalar_winner_increment(winner_0, winner_delta, user_seed)
-    implicit none
     integer, intent(in), optional :: user_seed
     real(real64), intent(in) :: winner_0
     real(real64), intent(out) :: winner_delta
@@ -70,7 +184,6 @@
           &winner_0, &
           &winner_delta, &
           &user_seed)
-    implicit none
     integer, intent(in), optional :: user_seed
     real(real64), intent(in) :: winner_0(DIM)
     real(real64), intent(out) :: winner_delta(DIM)
@@ -111,7 +224,6 @@
   !> @param[inout] endx The updated position vector of dimension `DIM`.
 !---------------------------------------------------------------------------
   subroutine BrownianStep(startx, endx)
-    implicit none
     real(real64), intent(in) :: startx(DIM)
     real(real64), intent(inout) :: endx(DIM)
     !!
@@ -147,7 +259,6 @@
     &brownian_increment, &
     &next_u &
   &)
-    implicit none
     real(real64), intent(in) :: current_u(DIM)
     real(real64), intent(in) :: brownian_increment(DIM)
     real(real64), allocatable, intent(out) :: next_u(:)
@@ -164,10 +275,10 @@
     call eval_diagonal_diffusion_at_u(current_u, u_diffusion)
     
     u_euler_maruyama(:) = current_u(:) &
-      + u_drift(:) * delta &
-      + u_diffusion(:) * brownian_increment(:)
-    call compute_milstein_correction(brownian_increment, u_milstein_correction)
-    next_u(:) = u_euler_maruyama(:) + u_milstein_correction(:)
+      + u_drift(:) * delta !&
+      !& + u_diffusion(:) * brownian_increment(:)
+    !call compute_milstein_correction(brownian_increment, u_milstein_correction)
+    next_u(:) = u_euler_maruyama(:) !+ u_milstein_correction(:)
     
     ! Deallocate local arrays to prevent memory leaks
     call free_vector(u_drift)
@@ -180,7 +291,6 @@
   
   subroutine compute_milstein_correction(brownian_increment, milstein_correction)
     use ieee_arithmetic, only: ieee_is_nan, ieee_is_finite
-    implicit none
     real(real64), intent(in) :: brownian_increment(DIM)
     real(real64), allocatable, intent(out) :: milstein_correction(:)
     real(real64), allocatable :: square_brownian_increment(:)
@@ -227,7 +337,6 @@
   !> The subroutine uses the `milstein_step` subroutine to advance the solution
   !> over time, starting from an initial condition and progressing to a final time.
   subroutine solve_sde_with_milstein(status)
-    implicit none
     logical, intent(out) :: status
     
     ! Local variables
@@ -254,7 +363,7 @@
         print *, "i: ", i
         stop
       end if
-      if (any(abs(u_current) > 1.0e10_real64)) then
+      if (any(abs(u_current) > 1.0e5_real64)) then
         print *, "Solution overflow detected at iteration:", i
         print *, "Max value:", maxval(abs(u_current))
         stop
@@ -263,18 +372,16 @@
       call vectorial_winner_increment(u_current, brownian_inc)
       
       ! Check brownian increment for overflow
-      if (any(abs(brownian_inc) > 1.0e10_real64)) then
+      if (any(abs(brownian_inc) > 1.03_real64)) then
         print *, "Brownian increment overflow at iteration:", i
         print *, "Max brownian:", maxval(abs(brownian_inc))
         stop
       end if
       
       call milstein_step(u_current, brownian_inc, u_next)
-      
-      ! Apply bounds to the solution
       do j = 1, DIM
-        if (abs(u_next(j)) > 1.0e6_real64) then
-          u_next(j) = sign(1.0e6_real64, u_next(j))
+        if (abs(u_next(j)) > 1.0e3_real64) then
+          u_next(j) = sign(1.0e3_real64, u_next(j))
         end if
       end do
       
@@ -285,7 +392,8 @@
     ! Create simple header
     call save_real64_2d_array_to_binary(file_name, path)
     status = .TRUE.
-    call print_matrix_with_indices('head(path)', path(0:5, 0:5), 5, 5)
+    call print_vector_with_indices("Last milsten iteration", u_next(1:5), 5)
+    call print_matrix_with_indices('head(path)', path(nobs, 1:5), 1, 5)
   end subroutine solve_sde_with_milstein
    !> Reshapes a 1D array into a 2D array using column-major order.
    !!
@@ -312,18 +420,43 @@
    !! @param[out] u0_proj_array      2D reshaped array of size (Nx, Ny)
    subroutine reshape_to_2d(u0_proj_row, u0_proj_array)
      use iso_fortran_env, only: real64
-     implicit none
      real(real64), intent(in) :: u0_proj_row(DIM)
      real(real64), intent(out) :: u0_proj_array(Nx, Ny)
      integer :: i, j, m
      do j = 1, Ny
-       do i = 1, Nx
+       do i = 1, Ny
          m = i + (j - 1) * Nx
          u0_proj_array(i, j) = u0_proj_row(m)
        end do
      end do
    end subroutine reshape_to_2d
    
+   !> Returns the sign of an integer value.
+   !!
+   !! This function determines the sign of the input integer and returns:
+   !!  * 1 if the input is positive
+   !!  * -1 if the input is negative
+   !!  * 0 if the input is zero
+   !!
+   !! @param[in] j The integer value to evaluate
+   !! @return Returns 1 for positive numbers, -1 for negative numbers, and 0 for zero
+   !!
+   !! Example:
+   !! ```fortran
+   !! i = sign_int(5)    ! Returns 1
+   !! i = sign_int(-3)   ! Returns -1
+   !! i = sign_int(0)    ! Returns 0
+   !! ```
+   integer function sign_int(j)
+     integer, intent(in) :: j
+     if (j > 0) then
+       sign_int = 1
+     elseif (j < 0) then
+       sign_int = -1
+     else
+       sign_int = 0
+     end if
+   end function sign_int
    !> Projects modal coefficients onto a uniform 2D spatial grid using a cosine basis.
    !!
    !! This subroutine evaluates a modal expansion of the form:
@@ -340,16 +473,15 @@
    !! @param[in]  Nx        Number of spatial grid points in x-direction
    !! @param[in]  Ny        Number of spatial grid points in y-direction
    !! @param[in]  Lx        Length of the domain in x-direction
-   !! @param[in]  L2        Length of the domain in y-direction
+   !! @param[in]  L2        Length of the domain in y-direction  gnu
    !! @param[out] u_grid    Reconstructed solution array on the grid (Nx, Ny)
    !!
    !! @note Grid points are located at cell centers:
    !!       \f$ x_i = dx \cdot (i - 1/2),\quad y_j = dy \cdot (j - 1/2) \f$
    subroutine project_modal_to_grid(u_proj, u_grid)
      use iso_fortran_env, only: real64
-     implicit none
      
-     real(real64), intent(in) :: u_proj(0:Nx - 1, 0:Ny - 1)
+     real(real64), intent(in) :: u_proj(Nx, Ny)
           ! Output
      real(real64), intent(out) :: u_grid(Nx, Ny)
      real(real64) :: dx, dy, xi, yj, hi, hj
@@ -367,12 +499,12 @@
        do ix = 1, Nx
          xi = dx * (real(ix, real64) - 0.5d0)
          do i = 0, Nx - 1
-           hi = sqrt(1.0d0 + sign(1.0d0, real(i, real64))) &
-                   &* cos(PI * real(i, real64) * xi / L1)
+           hi = sqrt(1.0d0 + real(sign_int(i), real64)) &
+                   &* cos(PI * real(i, real64)  / L1 * xi)
            do j = 0, Ny - 1
-             hj = sqrt(1.0d0 + sign(1.0d0, real(j, real64))) &
-                     & * cos(PI * real(j, real64) * yj / L2)
-             u_grid(ix, iy) = u_grid(ix, iy) + u_proj(i, j) * hi * hj
+             hj = sqrt(1.0d0 + real(sign_int(j), real64)) &
+                     & * cos(PI * real(j, real64) / L2 * yj)
+             u_grid(ix, iy) = u_grid(ix, iy) + u_proj(i + 1, j + 1) * hi * hj
            end do
          end do
        end do

@@ -18,14 +18,14 @@ module mod_global_parameters_and_shared_data
     integer(int32), parameter :: Ny = 50
     integer(int32), parameter :: DIM = Nx * Ny
     integer(int32), parameter :: SEED = 765431
-    integer(int32), parameter :: nobs = 5000
+    integer(int32), parameter :: nobs = 50000
     integer(int32), parameter :: NUM_GAUSSIAN_SUB_STEPS = 10
     real(real64), parameter :: PI = acos(-1.0_real64)
     real(real64), parameter :: theta = 1.0_real64
     real(real64), parameter :: beta = 0.1_real64
     real(real64), parameter :: gamma = 2.0_real64
     real(real64), parameter :: sigma = 0.0001_real64
-    real(real64), parameter :: delta = 1.0e-3_real64
+    real(real64), parameter :: delta = 1.0e-5_real64
     real(real64), parameter :: L1 = 5.0_real64
     real(real64), parameter :: L2 = 5.0_real64
     !-----------------------------------------
@@ -57,26 +57,6 @@ module mod_global_parameters_and_shared_data
 contains
     
     subroutine allocate_dynamic_memory()
-        ! Deallocate arrays if already allocated
-        if (allocated(AM)) deallocate(AM)
-        if (allocated(times)) deallocate(times)
-        if (allocated(eigenvalues)) deallocate(eigenvalues)
-        if (allocated(b)) deallocate(b)
-        if (allocated(u)) deallocate(u)
-        if (allocated(hs)) deallocate(hs)
-        if (allocated(u_zero)) deallocate(u_zero)
-        if (allocated(Ls)) deallocate(Ls)
-        if (allocated(lambdas)) deallocate(lambdas)
-        if (allocated(diffusion_derivative)) deallocate(diffusion_derivative)
-        if (allocated(path)) deallocate(path)
-        if (allocated(a)) deallocate(a)
-        if (allocated(bmat)) deallocate(bmat)
-        if (allocated(driftmat)) deallocate(driftmat)
-        if (allocated(diffusionmat)) deallocate(diffusionmat)
-        if (allocated(lambdamatrix)) deallocate(lambdamatrix)
-        if (allocated(brownian)) deallocate(brownian)
-        if (allocated(gaussian_samples)) deallocate(gaussian_samples)
-        
         ! Load matrix A entries
         allocate(AM(DIM * DIM))  ! Dynamically allocate memory for AM
         open(99, file="../data/MatrixA.dat")

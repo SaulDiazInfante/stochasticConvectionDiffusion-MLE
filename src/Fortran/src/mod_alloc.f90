@@ -30,8 +30,12 @@ module mod_alloc
     subroutine alloc_array(B, rows, cols)
         real(real64), allocatable, intent(inout) :: B(:,:)
         integer(int32), intent(in) :: rows, cols
+        integer(int32) :: stat
+        character(len=100) :: errmsg
 
-        allocate(B(rows, cols))
+        if (allocated(B)) deallocate(B)
+        allocate(B(rows, cols), stat=stat, errmsg=errmsg)
+        if (stat > 0) error stop errmsg
         B = 0.0_real64
     end subroutine alloc_array
 

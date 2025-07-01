@@ -1,8 +1,5 @@
-% load('Coeficientes.mat')
-% vcoef
-% stop
-mkdir Data
 
+mkdir Data
 %% Definicion de campo de velocidades:
 
 Lx = 5; Ly = 5;
@@ -40,13 +37,14 @@ end
 
 u0_proj = zeros(Nx,Ny);
 for i = 0:Nx-1
-    progress_bar(i+1, Nx, 40, 'Decomposing initial condition')
-    for j = 0:Ny-1
-        u0_proj(i+1,j+1) = (1 / (Lx * Ly)) * integral_ij(u0grid, i, j, Nx, Ny, Lx, Ly);
-    end
+  progress_bar(i+1, Nx, 40, 'Decomposing initial condition')
+  for j = 0:Ny-1
+    u0_proj(i+1,j+1) = ...
+      (1 / (Lx * Ly)) * integral_ij(u0grid, i, j, Nx, Ny, Lx, Ly);
+  end
 end
 
-u0_comp_grid = comp(u0_proj,Nx,Ny,Lx,Ly);
+u0_comp_grid = comp(u0_proj, Nx, Ny, Lx, Ly);
 
 figure(1)
 subplot(2,2,1)
@@ -55,18 +53,19 @@ title('u_0')
 quiver(xgrid,ygrid,v1grid,v2grid)
 contour(xgrid,ygrid,u0grid,100); colorbar;
 subplot(2,2,2)
+
 hold on
 title('u_0 composed')
 quiver(xgrid,ygrid,v1grid,v2grid)
 contour(xgrid,ygrid,u0_comp_grid,100); colorbar;
 axis([0,Lx,0,Ly])
 subplot(2,2,3)
+
 hold on
 title('Difference')
 quiver(xgrid,ygrid,v1grid,v2grid)
 contour(xgrid,ygrid,abs(u0_comp_grid-u0grid),100); colorbar;
 axis([0,Lx,0,Ly])
-
 clf 
 
 % figure(2)
@@ -79,15 +78,16 @@ clf
 
 vcoef = zeros(Nx,Ny,Nx,Ny);
 for i = 0:Nx-1
-    progress_bar(i + 1, Nx, 40, 'Computing coefficients');
-    for j = 0:Ny-1
-        for k = 0:Nx-1
-            for l = 0:Ny-1
-                vcoef(i+1,j+1,k+1,l+1) = (1/(Lx*Ly)) * ...
-                    integral_ijkl(v1grid, v2grid, i, j, k, l, Nx, Ny, Lx, Ly);
-            end
-        end
+  progress_bar(i + 1, Nx, 40, 'Computing coefficients');
+  for j = 0:Ny - 1
+    for k = 0:Nx - 1
+      for l = 0:Ny - 1
+        vcoef(i+1, j+1, k+1, l+1) = ... 
+          (1 / (Lx * Ly)) * ...
+          integral_ijkl(v1grid, v2grid, i, j, k, l, Nx, Ny, Lx, Ly);
+      end
     end
+  end
 end
 
 %% Almacenamiento de los datos:

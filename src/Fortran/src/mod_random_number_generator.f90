@@ -45,6 +45,7 @@ contains
         end if
         
         ! Allocate the output array
+        if (allocated(gaussian_sample)) deallocate(gaussian_sample)
         allocate(gaussian_sample(buffer_size))
         gaussian_sample = 0.0_real64
     !       ***** Initializing *****
@@ -95,6 +96,7 @@ contains
         end if
         
         ! Allocate the output array
+        if (allocated(gaussian_sample)) deallocate(gaussian_sample)
         allocate(gaussian_sample(n_row, n_col))
         gaussian_sample = 0.0_real64
 

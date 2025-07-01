@@ -266,6 +266,9 @@
     real(real64), allocatable :: u_drift (:), u_diffusion(:)
     real(real64), allocatable :: u_euler_maruyama(:), u_milstein_correction(:)
   
+    ! Ensure next_u is deallocated before allocation
+    if (allocated(next_u)) call free_vector(next_u)
+    
     call alloc_vector(u_drift, DIM)
     call alloc_vector(u_diffusion, DIM)
     call alloc_vector(u_euler_maruyama, DIM)
@@ -338,9 +341,9 @@
   !> over time, starting from an initial condition and progressing to a final time.
   subroutine solve_sde_with_milstein(status)
     logical, intent(out) :: status
-    
     ! Local variables
     real(real64), allocatable :: u_current(:), u_next(:), brownian_inc(:)
+    real(real64) :: temp_vec(5)  ! Moved declaration here
     character(len=100) :: file_name
     character(len=20) :: header(DIM)
     integer :: i, n_steps, j
@@ -357,7 +360,7 @@
     path(0, :) = u_zero(:)
     ! Time stepping loop
     do i = 1, nobs
-      ! Check for NaN or extremely large values in current solution
+      call show_progress(i, nobs, "Solving at time i \Delta t, i/N_{obs} ")
       if (any(ieee_is_nan(u_current))) then
         print *, "NanN found at iteration:"
         print *, "i: ", i
@@ -392,8 +395,10 @@
     ! Create simple header
     call save_real64_2d_array_to_binary(file_name, path)
     status = .TRUE.
-    call print_vector_with_indices("Last milsten iteration", u_next(1:5), 5)
-    call print_matrix_with_indices('head(path)', path(nobs, 1:5), 1, 5)
+    temp_vec = u_next(1:5)  ! Copy slice to contiguous array
+    call print_vector_with_indices("Last milsten iteration", temp_vec, 5)
+    temp_vec = path(nobs, 1:5)  ! Copy slice to contiguous array
+    call print_vector_with_indices('head(path)', temp_vec, 5)
   end subroutine solve_sde_with_milstein
    !> Reshapes a 1D array into a 2D array using column-major order.
    !!
@@ -423,12 +428,12 @@
      real(real64), intent(in) :: u0_proj_row(DIM)
      real(real64), intent(out) :: u0_proj_array(Nx, Ny)
      integer :: i, j, m
-     do j = 1, Ny
-       do i = 1, Ny
-         m = i + (j - 1) * Nx
-         u0_proj_array(i, j) = u0_proj_row(m)
-       end do
-     end do
+    do j = 1, Ny
+      do i = 1, Nx
+        m = i + (j - 1) * Nx
+        u0_proj_array(i, j) = u0_proj_row(m)
+      end do
+    end do
    end subroutine reshape_to_2d
    
    !> Returns the sign of an integer value.

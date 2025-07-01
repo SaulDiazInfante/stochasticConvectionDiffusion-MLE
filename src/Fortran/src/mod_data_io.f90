@@ -56,43 +56,46 @@ subroutine print_matrix(A, rows, cols)
   !> @param[in]  rows  Number of rows in the matrix.
   !> @param[in]  cols  Number of columns in the matrix.
   subroutine print_matrix_with_indices(name, A, rows, cols)
+    use iso_fortran_env, only: int32, real64
     implicit none
     character(len=*), intent(in) :: name
     integer(int32), intent(in) :: rows, cols
     real(real64), intent(in) :: A(rows, cols)
+    
     integer :: i, j
-    integer, parameter :: col_width = 15  ! Match ES13.5 format
+    integer, parameter :: col_width = 22
     character(len=6) :: row_index_str
-    character(len=20) :: val_str
-    character(len=500) :: full_line  ! Long enough for several columns
-    character(len=15) :: col_index_str
-
-    print *, "(++++) ", trim(name)
-    print *, repeat("-", 4 + cols * col_width)
+    character(len=30) :: val_str
+    character(len=3000) :: full_line
+    character(len=22) :: col_index_str
     
-    ! Print column headers
-    full_line = repeat(" ", 6)  ! Space for row index
+    ! Header
+    write(*, '(A)') repeat("=", 6 + cols * col_width)
+    write(*, '(A)') "(++++) " // trim(name)
+    write(*, '(A)') repeat("-", 6 + cols * col_width)
+    
+    ! Column indices
+    full_line = repeat(' ', 6)
     do j = 1, cols
-      write(col_index_str, '(I15)') j
-      full_line = trim(full_line)//trim(col_index_str)
+      write(col_index_str, '(I22)') j
+      full_line = full_line(1:len_trim(full_line)) // col_index_str
     end do
-    print *, trim(full_line)
+    write(*, '(A)') full_line(1:len_trim(full_line))
     
-    ! Print matrix with row indices and aligned entries
+    ! Print matrix rows
     do i = 1, rows
       write(row_index_str, '(I6)') i
       full_line = row_index_str
       do j = 1, cols
-        write(val_str, '(ES20.10)') A(i,j)
-        full_line = trim(full_line)//'  '//trim(val_str)
+        write(val_str, '(ES22.10)') A(i,j)
+        full_line = full_line(1:len_trim(full_line)) // val_str
       end do
-      print *, trim(full_line)
+      write(*, '(A)') full_line(1:len_trim(full_line))
     end do
     
-    print *, repeat("=", 4 + cols * col_width)
+    write(*, '(A)') repeat("=", 6 + cols * col_width)
   end subroutine print_matrix_with_indices
-
-
+  
   !> @brief Writes a matrix to a file.
   !> 
   !> This subroutine writes a `rows x cols` matrix `A` to a specified file.
@@ -153,7 +156,7 @@ subroutine print_matrix(A, rows, cols)
     integer :: i
     character(len=6) :: index_str
     character(len=20) :: value_str
-    print*,"(++++) vector ", name
+    print *, "(++++) vector ", trim(name)
     ! Print header
     print *, "  Index    Value"
     print *, "----------------"
@@ -349,37 +352,20 @@ subroutine print_matrix(A, rows, cols)
   !! @param i       Current iteration (1-based)
   !! @param n       Total number of iterations
   !! @param status  A short status string describing the current process (e.g., "Solving", "Reshaping")
-  subroutine show_progress(i, n, status)
+  subroutine show_progress(i, n, label)
+    use iso_fortran_env, only: int32
     implicit none
-    integer, intent(in) :: i, n
-    character(len=*), intent(in) :: status
-    integer :: percent, bar_width, j
-    character(len=100) :: bar
-    character(len=200) :: progress_str
     
-    bar_width = 40
-    percent = int(real(i) / real(n) * 100.0)
+    integer(int32), intent(in) :: i, n
+    character(len=*), intent(in) :: label
     
-    bar = "["
+    real :: progress
     
-    do j = 1, bar_width
-      if (j <= percent * bar_width / 100) then
-        bar(j+1:j+1) = "#"
-      else
-        bar(j+1:j+1) = "-"
-      end if
-    end do
+    progress = real(i) / real(n)
     
-    bar(bar_width+2:bar_width+2) = "]"
-    
-    ! First construct the complete string
-    write(progress_str, '(A,I3,A,I8,A,I8,A)') &
-          trim(bar)//" ", percent, "% (", i, "/", n, ")"
-    ! Then write it with the status
-    write(*, '(A,A,A)', advance='no') char(13), trim(progress_str), " - "//trim(status)
-    
-    if (i == n) then
-      print *  ! new line after final step
+    ! Simple progress output every 10% or at the end
+    if (mod(i, n/10) == 0 .or. i == n) then
+      write(*, '(A, I0, A, I0, A, F5.1, A)') label, i, '/', n, ' (', 100.0 * progress, '%%)'
     end if
   end subroutine show_progress
 

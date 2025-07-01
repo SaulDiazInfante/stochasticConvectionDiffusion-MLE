@@ -22,9 +22,11 @@ program test_mod_sde_solver
     real(real64), allocatable :: u_proj_2d(:, :)
     real(real64) :: temp_u_proj(5), temp_grid(5,5)  ! Temporary arrays for slices
     real(real64), parameter :: eps = 1.0e-12_real64
+    real(real64) :: temp_path(5), temp_next_u(5), temp_delta_w(5)
     integer(int32), allocatable :: row_nan(:), col_nan(:)
     integer(int32) :: rows, cols, k, count_nan
     
+    ! call allocate_dynamic_memory()
     call build_sde()
     call display_parameters()
     call display_domain_problem_arrays()
@@ -54,22 +56,14 @@ program test_mod_sde_solver
         print *, "ERROR: all entries are zero"
         print *, "Vectporial Winner Increment  TEST FAILED"
         ! Create temp array with explicit type for sliced data
-        block
-          real(real64) :: temp_delta_w(5)
-          temp_delta_w = vectorial_winner_delta(1:5)
-          call print_vector_with_indices("Delta_W", temp_delta_w, 5)
-        end block
+        temp_delta_w = vectorial_winner_delta(1:5)
+        call print_vector_with_indices("Delta_W", temp_delta_w, 5)
     else
         status = .TRUE.
         print *, 'Vecorial Winner Increment TEST PASSED'
-        ! Create temp array with explicit type for sliced data
-        block
-          real(real64) :: temp_delta_w(5)
-          temp_delta_w = vectorial_winner_delta(1:5)
-          call print_vector_with_indices("Delta_W", temp_delta_w, 5)
-        end block
+        temp_delta_w = vectorial_winner_delta(1:5)
+        call print_vector_with_indices("Delta_W", temp_delta_w, 5)
     end if
-    
     allocate(next_brownian_point_path(DIM))
     allocate(current_brownian_point_path(DIM))
     
@@ -79,24 +73,18 @@ program test_mod_sde_solver
     status = .FALSE.
     if (all(abs(next_brownian_point_path) < eps)) then
         print *, "ERROR: Vectorial Browninan path stuck TEST FAILED"
-        ! Create temp array with explicit type for sliced data
-        block
-          real(real64) :: temp_path(5)
-          temp_path = next_brownian_point_path(1:5)
-          call print_vector_with_indices("W_{t} + \Dela W: ", temp_path, 5)
-        end block
+        temp_path = next_brownian_point_path(1:5)
+        call print_vector_with_indices("W_{t} + \Dela W: ", temp_path, 5)
     else
         print *, "BrownianStep TEST PASSED"
-        ! Create temp array with explicit type for sliced data
-        block
-          real(real64) :: temp_path(5)
-          temp_path = next_brownian_point_path(1:5)
-          call print_vector_with_indices("W_{t} + \Dela W: ", temp_path, 5)
-        end block
+        temp_path = next_brownian_point_path(1:5)
+        call print_vector_with_indices("W_{t} + \Dela W: ", temp_path, 5)
     end if
-    
     call alloc_vector(current_u, DIM)
-    ! next_u is allocated by milstein_step, so don't allocate here
+    open(99, file="../data/u0_proj_row.dat")
+    read(99, *) current_u
+    close(99)
+    
     call milstein_step(&
         &current_u, &
         &vectorial_winner_delta, &
@@ -104,20 +92,12 @@ program test_mod_sde_solver
     &)
     if (all(abs(next_u) < eps)) then
         print *, "ERROR: Milstein step is stuck TEST FAILED"
-        ! Create temp array with explicit type for sliced data
-        block
-          real(real64) :: temp_next_u(5)
-          temp_next_u = next_u(1:5)
-          call print_vector_with_indices("U_{n+1} ", temp_next_u, 5)
-        end block
+        temp_next_u = next_u(1:5)
+        call print_vector_with_indices("U_{n+1} ", temp_next_u, 5)
     else
         print *, "Non zero milstein_step TEST PASSED"
-        ! Create temp array with explicit type for sliced data
-        block
-          real(real64) :: temp_next_u(5)
-          temp_next_u = next_u(1:5)
-          call print_vector_with_indices("U_{n+1} ", temp_next_u, 5)
-        end block
+        temp_next_u = next_u(1:5)
+        call print_vector_with_indices("U_{n+1} ", temp_next_u, 5)
     end if
     has_nan = any(ieee_is_nan(next_u))
     if (has_nan) then
@@ -130,6 +110,7 @@ program test_mod_sde_solver
     
     status = .FALSE.
     has_nan = .TRUE.
+    !
     call solve_sde_with_milstein(status)
     has_nan = any(ieee_is_nan(path))
     if (has_nan) then
@@ -140,9 +121,10 @@ program test_mod_sde_solver
             print '(A,I0,A,I0,A)', "  (", row_nan(k), ",", col_nan(k), ")"
         end do
         status = .FALSE.
-        
     else
         print *, "The sampled path does not contain NaN. TEST PASSED"
+        write(*, *)
+        write(*, *)
         status = .TRUE.
     end if
     ! call save_real64_2d_array_to_binary("../data/sampled_path.bin", path)
@@ -161,8 +143,6 @@ program test_mod_sde_solver
     call reshape_to_2d(u_proj, u_proj_2d)
     temp_grid = u_proj_2d(1:5, 1:5)
     call print_matrix_with_indices("reshape(u_proj)", temp_grid, 5, 5)
-    
-    ! Project and make temporary copy
     call project_modal_to_grid(u_proj_2d, u_grid)
     temp_grid = u_grid(1:5, 1:5)
     call print_matrix_with_indices("U_grid", temp_grid, 5, 5)
@@ -175,6 +155,5 @@ program test_mod_sde_solver
     if (allocated(current_brownian_point_path)) deallocate(current_brownian_point_path)
     if (allocated(row_nan)) deallocate(row_nan)
     if (allocated(col_nan)) deallocate(col_nan)
-    
-    ! call deallocate_all_shared_data()  ! Commented out to avoid segfault with TBB allocator
+    !call deallocate_all_shared_data()  ! Commented out to avoid segfault with TBB allocator
 end program test_mod_sde_solver

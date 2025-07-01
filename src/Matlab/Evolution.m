@@ -1,11 +1,11 @@
 Nx = 50; Ny = 50; %Numeros de puntos en la malla
 Lx = 5; Ly = 5;
 
-N_ITER = 50000;
+N_ITER = 5000;
 beta = 0.1;
 theta = 1;
 T = .5;
-dt = 10^(-5); %Tamanio de paso
+dt = 10^(-3); %Tamanio de paso
 count = 0;
 
 
@@ -41,6 +41,19 @@ end
 
 u0_proj_row_np1 = u0_proj_row;
 u0_proj_row_n = u0_proj_row;
+tol = 0.01*max(max(abs(u0_proj_row))); %1 por ciento
+
+Index_0 = ones(Nx,Ny);
+Index_t = ones(Nx,Ny);
+for i = 0:Nx-1
+    for j = 0:Ny-1
+        if abs(u0_proj(i+1,j+1)) < tol
+            Index_0(i+1,j+1) = 0;
+        end
+    end
+end
+
+
 
 M = beta*Lambda+theta*A;
 t = 0;
@@ -50,6 +63,13 @@ for i = 0:N_ITER-1
   progress_bar(i+1, N_ITER, 40, 'Integratiing with Euler')
   u0_proj_row_np1 = u0_proj_row_n - ...
       M * u0_proj_row_n * dt;
+  for i = 0:Nx-1
+    for j = 0:Ny-1
+      if abs(u0_proj_np1(i+1,j+1)) < tol
+        Index_t(i+1,j+1) = 0;
+      end
+    end
+  end
   u0_proj_row_n = u0_proj_row_np1;
 end
 
@@ -98,5 +118,28 @@ title(sprintf('u(t) at t = %.6f', t))
 quiver(xgrid, ygrid, v1grid, v2grid)
 contour(xgrid, ygrid, u0_comp_np1_grid,100); colorbar;
 axis([0,Lx,0,Ly])
+
+figure(2)
+subplot(2,2,1)
+%contour(Index_0); colorbar;
+hold on
+for i = 0:Nx-1
+  for j = 0:Ny-1
+    if Index_0(i+1,j+1) == 1
+      plot(i,j,'*')
+    end
+  end
+end
+subplot(2,2,2)
+%contour(Index_todoT); colorbar;
+hold on
+for i = 0:Nx-1
+  for j = 0:Ny-1
+    if Index_t(i+1,j+1) == 1
+        plot(i,j,'*')
+    end
+  end
+end
+
 u0_comp_np1_grid(1:5, 1:5)
 save('Data/u0_grid_.mat','u0_comp_np1_grid','Nx','Ny')

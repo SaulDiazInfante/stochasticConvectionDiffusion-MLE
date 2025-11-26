@@ -1,4 +1,4 @@
-function progress_bar(i, n, width, msg)
+function progress_bar(i, n, width, msg, f_bar)
     % progress_bar(i, n, width, msg)
     % i:    current iteration
     % n:    total iterations
@@ -18,17 +18,25 @@ function progress_bar(i, n, width, msg)
     bar = [repmat('=', 1, completed), '>', repmat(' ', 1, max(0, remaining - 1))];
     rest = n - i;
 
-    fprintf(
-        '\r[%s] %3.0f%% | Rem. : %d of %d | %s',
-        bar,
-        percent * 100,
-        rest,
-        n,
-        msg
-    );
-    fflush(stdout);
-
-    if i == n
-        fprintf('\n');  % Newline at 100%
-    end
+    %fprintf(
+    %    '\r[%s] %3.0f%% | Rem. : %d of %d | %s',
+    %    bar,
+    %    percent * 100,
+    %    rest,
+    %    n,
+    %    msg
+    %);
+    %fflush(stdout);
+    waitbar(percent, f_bar,...
+        sprintf('\r[%s] %3.0f%% | Rem. : %d of %d | %s',...
+            bar, ...
+            percent * 100, ...
+            rest, ...
+            n, ...
+            msg ...
+        ) ...
+    )
+    %if i == n
+    %    fprintf('\n');  % Newline at 100%
+    %end
 end
